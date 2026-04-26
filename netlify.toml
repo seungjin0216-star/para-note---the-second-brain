@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+
+# SPA 라우팅 — 모든 경로를 index.html로
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# PWA 공유 타겟 처리
+[[redirects]]
+  from = "/share-target"
+  to = "/index.html"
+  status = 200
