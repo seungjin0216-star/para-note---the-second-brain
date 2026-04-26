@@ -6,20 +6,8 @@ import MainApp  from './pages/MainApp';
 export default function App() {
   const { user, loading, login } = useAuth();
 
-  // iOS 단축어 / PWA Share Target 처리
-  // 앱이 열릴 때 URL 파라미터를 localStorage에 저장 (로그인 전이어도 OK)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sharedUrl   = params.get('url');
-    const sharedTitle = params.get('title') || params.get('text');
-    if (sharedUrl || sharedTitle) {
-      localStorage.setItem('__pendingShare', JSON.stringify({
-        url: sharedUrl || '',
-        title: sharedTitle || '',
-      }));
-      window.history.replaceState({}, '', '/');
-    }
-  }, []); // 앱 최초 로드 시 1회만
+  // URL 파라미터 캡처는 main.jsx에서 React 시작 전에 처리됨
+  // (window.__pendingShare 에 저장 → MainApp에서 소비)
 
   if (loading) {
     return (

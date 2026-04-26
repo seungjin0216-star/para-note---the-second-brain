@@ -723,27 +723,21 @@ export default function MainApp({ user }) {
 
   const allTags = userTags.length ? userTags : [];
 
-  /* 공유 수신 처리 — localStorage 방식 (iOS 단축어 + PWA 모두 호환) */
+  /* 공유 수신 처리 — main.jsx에서 React 시작 전에 캡처한 window.__pendingShare 소비 */
   useEffect(() => {
-    const raw = localStorage.getItem('__pendingShare');
-    if (!raw) return;
-    try {
-      localStorage.removeItem('__pendingShare');
-      const { url, title } = JSON.parse(raw);
-      const t = title || url;
-      if (t) {
-        addItem({
-          type: 'inbox',
-          title: t,
-          url: url || '',
-          tags: [], note: '', aiTags: [],
-          createdAt: today(),
-        });
-        setTab('inbox');
-      }
-    } catch (e) {
-      console.error('pendingShare 파싱 오류', e);
-    }
+    if (!window.__pendingShare) return;
+    const { url, title } = window.__pendingShare;
+    delete window.__pendingShare;
+    const t = title || url;
+    if (!t) return;
+    addItem({
+      type: 'inbox',
+      title: t,
+      url: url || '',
+      tags: [], note: '', aiTags: [],
+      createdAt: today(),
+    });
+    setTab('inbox');
   }, []);  // eslint-disable-line
 
   /* ─ 필터된 뷰 ─ */
