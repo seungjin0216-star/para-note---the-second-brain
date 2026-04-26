@@ -6,18 +6,20 @@ import MainApp  from './pages/MainApp';
 export default function App() {
   const { user, loading, login } = useAuth();
 
-  // PWA Share Target 처리
-  // 유튜브·인스타 공유 시 /?url=...&title=... 형태로 앱이 열림
+  // iOS 단축어 / PWA Share Target 처리
+  // 앱이 열릴 때 URL 파라미터를 localStorage에 저장 (로그인 전이어도 OK)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sharedUrl   = params.get('url');
     const sharedTitle = params.get('title') || params.get('text');
-    if ((sharedUrl || sharedTitle) && user) {
-      // MainApp에서 window.sharedData를 읽어 수신함에 자동 저장
-      window.__sharedData = { url: sharedUrl || '', title: sharedTitle || '' };
+    if (sharedUrl || sharedTitle) {
+      localStorage.setItem('__pendingShare', JSON.stringify({
+        url: sharedUrl || '',
+        title: sharedTitle || '',
+      }));
       window.history.replaceState({}, '', '/');
     }
-  }, [user]);
+  }, []); // 앱 최초 로드 시 1회만
 
   if (loading) {
     return (
