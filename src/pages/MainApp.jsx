@@ -723,18 +723,38 @@ export default function MainApp({ user }) {
 
   const allTags = userTags.length ? userTags : [];
 
-  /* PWA Share Target — 앱 로드 시 window.__sharedData 처리 */
+  /* 공유 수신 처리 — iOS 단축어 URL 파라미터 + PWA Share Target 모두 처리 */
   useEffect(() => {
+    // 방법 1: URL 파라미터 직접 읽기 (iOS 단축어: ?url=... 형태로 열림)
+    const params = new URLSearchParams(window.location.search);
+    const sharedUrl   = params.get('url');
+    const sharedTitle = params.get('title') || params.get('text');
+
+    if (sharedUrl || sharedTitle) {
+      const t = sharedTitle || sharedUrl;
+      addItem({
+        type: 'inbox',
+        title: t,
+        url: sharedUrl || '',
+        tags: [], note: '', aiTags: [],
+        createdAt: today(),
+      });
+      setTab('inbox');
+      window.history.replaceState({}, '', '/');   // URL 정리
+      return;
+    }
+
+    // 방법 2: window.__sharedData (App.jsx가 미리 파싱해둔 경우 fallback)
     if (window.__sharedData) {
       const { url, title } = window.__sharedData;
       delete window.__sharedData;
       const t = title || url;
       if (t) {
-        addItem({ type: 'inbox', title: t, url: url || '', tags: [], note: '', createdAt: today() });
+        addItem({ type: 'inbox', title: t, url: url || '', tags: [], note: '', aiTags: [], createdAt: today() });
         setTab('inbox');
       }
     }
-  }, []);
+  }, []);  // eslint-disable-line
 
   /* ─ 필터된 뷰 ─ */
   const inbox = useMemo(() => items.filter(i => i.type === 'inbox'), [items]);
