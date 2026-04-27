@@ -224,35 +224,89 @@ function ProcessModal({ item, projects, allTags, onClose, onProcess }) {
 /* ─── 새 프로젝트 모달 ─── */
 function AddProjectModal({ onClose, onSave }) {
   const [title, setTitle] = useState('');
-  const [desc, setDesc] = useState('');
   const [due, setDue] = useState('');
+  const [checks, setChecks] = useState([]);
+  const [ckInput, setCkInput] = useState('');
   const ref = useRef();
+  const ckRef = useRef();
   useEffect(() => { setTimeout(() => ref.current?.focus(), 100); }, []);
 
+  const addCheck = () => {
+    const t = ckInput.trim();
+    if (!t) return;
+    setChecks(p => [...p, t]);
+    setCkInput('');
+    setTimeout(() => ckRef.current?.focus(), 50);
+  };
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="su" style={{ background: '#fff', borderRadius: 22, width: '100%', maxWidth: 420, padding: '22px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>🎯 새 프로젝트</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: '#aaa', cursor: 'pointer' }}>×</button>
+      <div className="su" style={{ background: '#fff', borderRadius: '22px 22px 0 0', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {/* 헤더 */}
+        <div style={{ padding: '16px 18px 12px', borderBottom: '0.5px solid #f0f0f0', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 14px' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>🎯 새 프로젝트</div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: '#aaa', cursor: 'pointer' }}>×</button>
+          </div>
         </div>
-        <input ref={ref} value={title} onChange={e => setTitle(e.target.value)}
-          placeholder="프로젝트 이름 *"
-          style={{ width: '100%', padding: '13px 15px', borderRadius: 13, border: '1.5px solid rgba(124,58,237,.3)', background: '#faf9ff', fontSize: 15, color: '#111', outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
-        <textarea value={desc} onChange={e => setDesc(e.target.value)}
-          placeholder="목표 설명 (선택)" rows={2}
-          style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,.12)', background: '#f9f9f7', fontSize: 13, color: '#333', outline: 'none', resize: 'none', marginBottom: 10, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 12, color: '#aaa', display: 'block', marginBottom: 5 }}>마감일</label>
-          <input type="date" value={due} onChange={e => setDue(e.target.value)}
-            style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,.12)', background: '#f9f9f7', fontSize: 14, color: '#333', outline: 'none', boxSizing: 'border-box' }} />
+
+        {/* 본문 */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px' }}>
+          {/* 프로젝트 이름 */}
+          <input ref={ref} value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="프로젝트 이름 *"
+            style={{ width: '100%', padding: '13px 15px', borderRadius: 13, border: '1.5px solid rgba(124,58,237,.3)', background: '#faf9ff', fontSize: 15, color: '#111', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }} />
+
+          {/* 마감일 */}
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ fontSize: 12, color: '#aaa', fontWeight: 600, display: 'block', marginBottom: 6 }}>마감일</label>
+            <input type="date" value={due} onChange={e => setDue(e.target.value)}
+              style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,.12)', background: '#f9f9f7', fontSize: 14, color: '#333', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+
+          {/* 체크리스트 */}
+          <div>
+            <label style={{ fontSize: 12, color: '#aaa', fontWeight: 600, display: 'block', marginBottom: 8 }}>
+              체크리스트 <span style={{ color: '#bbb', fontWeight: 400 }}>— 할 일을 한 줄씩 추가</span>
+            </label>
+
+            {/* 추가된 항목들 */}
+            {checks.map((t, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: '#f9f9f7', borderRadius: 10, marginBottom: 6, border: '0.5px solid rgba(0,0,0,.08)' }}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px solid #ddd', flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 14, color: '#333' }}>{t}</span>
+                <button onClick={() => setChecks(p => p.filter((_, j) => j !== i))}
+                  style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>
+              </div>
+            ))}
+
+            {/* 입력 */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input ref={ckRef} value={ckInput} onChange={e => setCkInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCheck()}
+                placeholder="할 일 입력 후 + 또는 Enter"
+                style={{ flex: 1, padding: '11px 13px', borderRadius: 11, border: '1px solid rgba(124,58,237,.2)', background: '#faf9ff', fontSize: 13, color: '#111', outline: 'none' }} />
+              <button onClick={addCheck} disabled={!ckInput.trim()}
+                style={{ padding: '11px 16px', borderRadius: 11, background: ckInput.trim() ? '#7C3AED' : '#e5e5e5', color: ckInput.trim() ? 'white' : '#aaa', border: 'none', cursor: ckInput.trim() ? 'pointer' : 'default', fontSize: 18, fontWeight: 700 }}>+</button>
+            </div>
+          </div>
         </div>
-        <button onClick={() => title.trim() && onSave({ title, desc, due: due || null })}
-          disabled={!title.trim()}
-          style={{ width: '100%', padding: 15, borderRadius: 14, background: title.trim() ? '#7C3AED' : '#e5e5e5', color: title.trim() ? 'white' : '#aaa', border: 'none', cursor: title.trim() ? 'pointer' : 'default', fontSize: 15, fontWeight: 700 }}>
-          프로젝트 만들기
-        </button>
+
+        {/* 저장 버튼 */}
+        <div style={{ padding: '12px 18px', borderTop: '0.5px solid #f0f0f0', flexShrink: 0 }}>
+          <button
+            onClick={() => title.trim() && onSave({
+              title,
+              due: due || null,
+              checks: checks.map((t, i) => ({ id: String(Date.now() + i), t, d: false })),
+            })}
+            disabled={!title.trim()}
+            style={{ width: '100%', padding: 15, borderRadius: 14, background: title.trim() ? '#7C3AED' : '#e5e5e5', color: title.trim() ? 'white' : '#aaa', border: 'none', cursor: title.trim() ? 'pointer' : 'default', fontSize: 15, fontWeight: 700 }}>
+            프로젝트 만들기 {checks.length > 0 && `(체크리스트 ${checks.length}개)`}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -577,10 +631,12 @@ function ResourceView({ items, projects, allTags, onLinkToProject, onDelete }) {
 }
 
 /* ─── 프로젝트 뷰 ─── */
-function ProjectView({ projects, resources, allTags, onCheck, onAddProject, onLinkResources, onUnlink, onAIRecommend }) {
+function ProjectView({ projects, resources, allTags, onCheck, onCheckAdd, onCheckDelete, onAddProject, onLinkResources, onUnlink, onAIRecommend }) {
   const [sel, setSel] = useState(null);
   const [showLink, setShowLink] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [ckInput, setCkInput] = useState('');
+  const [reportItem, setReportItem] = useState(null);
   const selP = sel ? projects.find(p => p.id === sel) : null;
   const linkedRes = selP ? resources.filter(r => (selP.linkedIds || []).includes(r.id)) : [];
   const p = selP ? pct(selP.checks) : null;
@@ -657,19 +713,34 @@ function ProjectView({ projects, resources, allTags, onCheck, onAddProject, onLi
             {selP.desc && <div style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>{selP.desc}</div>}
 
             {/* 체크리스트 */}
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 8 }}>
-              체크리스트 {p !== null && <span style={{ color: '#7C3AED' }}>({p}%)</span>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>
+                체크리스트 {p !== null && <span style={{ color: '#7C3AED' }}>({p}%)</span>}
+              </div>
+              <span style={{ fontSize: 11, color: '#bbb' }}>{(selP.checks || []).filter(c => c.d).length}/{(selP.checks || []).length} 완료</span>
             </div>
             {(selP.checks || []).map(ck => (
-              <div key={ck.id} onClick={() => onCheck(selP.id, ck.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '0.5px solid #f5f5f5', cursor: 'pointer' }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: `2px solid ${ck.d ? '#0D9488' : '#ddd'}`, background: ck.d ? '#0D9488' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div key={ck.id}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '0.5px solid #f5f5f5' }}>
+                <div onClick={() => onCheck(selP.id, ck.id)}
+                  style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: `2px solid ${ck.d ? '#0D9488' : '#ddd'}`, background: ck.d ? '#0D9488' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   {ck.d && <svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4.5l3.5 3.5 5.5-7" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                 </div>
-                <span style={{ fontSize: 14, color: ck.d ? '#bbb' : '#333', textDecoration: ck.d ? 'line-through' : 'none', flex: 1 }}>{ck.t}</span>
+                <span onClick={() => onCheck(selP.id, ck.id)} style={{ fontSize: 14, color: ck.d ? '#bbb' : '#333', textDecoration: ck.d ? 'line-through' : 'none', flex: 1, cursor: 'pointer' }}>{ck.t}</span>
+                <button onClick={() => onCheckDelete(selP.id, ck.id)}
+                  style={{ background: 'none', border: 'none', color: '#ddd', fontSize: 16, cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>
               </div>
             ))}
-            {!(selP.checks?.length) && <div style={{ fontSize: 12, color: '#ccc', textAlign: 'center', padding: '10px 0' }}>체크리스트 없음</div>}
+            {/* 체크리스트 추가 입력 */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <input value={ckInput} onChange={e => setCkInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && ckInput.trim()) { onCheckAdd(selP.id, ckInput.trim()); setCkInput(''); } }}
+                placeholder="할 일 추가…"
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: '1px solid rgba(124,58,237,.2)', background: '#faf9ff', fontSize: 13, color: '#111', outline: 'none' }} />
+              <button onClick={() => { if (ckInput.trim()) { onCheckAdd(selP.id, ckInput.trim()); setCkInput(''); } }}
+                disabled={!ckInput.trim()}
+                style={{ padding: '9px 14px', borderRadius: 10, background: ckInput.trim() ? '#7C3AED' : '#e5e5e5', color: ckInput.trim() ? 'white' : '#aaa', border: 'none', cursor: ckInput.trim() ? 'pointer' : 'default', fontSize: 16, fontWeight: 700 }}>+</button>
+            </div>
           </div>
 
           {/* 연결 자료 섹션 */}
@@ -698,20 +769,44 @@ function ProjectView({ projects, resources, allTags, onCheck, onAddProject, onLi
 
           {linkedRes.map(r => (
             <div key={r.id} style={{ background: 'rgba(217,119,6,.05)', borderRadius: 13, padding: '13px 14px', marginBottom: 8, border: '0.5px solid rgba(217,119,6,.2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  {r.url && <div style={{ fontSize: 10, fontWeight: 600, color: isYT(r.url) ? '#DC2626' : '#7C3AED', marginBottom: 3 }}>{isYT(r.url) ? '▶ YouTube' : isIG(r.url) ? '📷 Instagram' : '🔗 링크'}</div>}
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#78350F', marginBottom: 4 }}>{r.title}</div>
-                  {r.note && <div style={{ fontSize: 12, color: '#92400E', marginBottom: 6, lineHeight: 1.4 }}>{r.note}</div>}
-                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                    {r.tags.map(t => <Tag key={t} label={t} selected allTags={allTags} size="sm" />)}
-                  </div>
+              {/* 상단: 출처 + 버튼들 */}
+              {r.url && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: isYT(r.url) ? '#DC2626' : '#7C3AED' }}>
+                    {isYT(r.url) ? '▶ YouTube' : isIG(r.url) ? '📷 Instagram' : '🔗 링크'}
+                  </span>
+                  <button onClick={() => window.open(r.url, '_blank')}
+                    style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(13,148,136,.1)', color: '#0D9488', border: '0.5px solid rgba(13,148,136,.3)', cursor: 'pointer', fontWeight: 600 }}>
+                    열기
+                  </button>
+                  {isYT(r.url) && (
+                    <button onClick={() => setReportItem(r)}
+                      style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(124,58,237,.1)', color: '#7C3AED', border: '0.5px solid rgba(124,58,237,.3)', cursor: 'pointer', fontWeight: 600 }}>
+                      📋 AI 리포트
+                    </button>
+                  )}
+                  <div style={{ flex: 1 }} />
+                  <button onClick={() => onUnlink(selP.id, r.id)}
+                    style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>
                 </div>
-                <button onClick={() => onUnlink(selP.id, r.id)}
-                  style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 18, cursor: 'pointer', padding: '0 0 0 8px', lineHeight: 1, flexShrink: 0 }}>×</button>
+              )}
+              {!r.url && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                  <button onClick={() => onUnlink(selP.id, r.id)}
+                    style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>
+                </div>
+              )}
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#78350F', marginBottom: 4 }}>{r.title}</div>
+              {r.note && <div style={{ fontSize: 12, color: '#92400E', marginBottom: 6, lineHeight: 1.4 }}>{r.note}</div>}
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {r.tags.map(t => <Tag key={t} label={t} selected allTags={allTags} size="sm" />)}
               </div>
             </div>
           ))}
+
+          {reportItem && (
+            <ReportModal item={reportItem} allTags={allTags} onClose={() => setReportItem(null)} />
+          )}
 
           {showLink && (
             <LinkResourcePanel project={selP} resources={resources} allTags={allTags}
@@ -955,6 +1050,20 @@ export default function MainApp({ user }) {
     updateItem(projId, { checks: proj.checks.map(c => c.id === ckId ? { ...c, d: !c.d } : c) });
   };
 
+  /* ─ 체크리스트 추가 ─ */
+  const doCheckAdd = (projId, text) => {
+    const proj = items.find(i => i.id === projId);
+    if (!proj) return;
+    updateItem(projId, { checks: [...(proj.checks || []), { id: String(Date.now()), t: text, d: false }] });
+  };
+
+  /* ─ 체크리스트 삭제 ─ */
+  const doCheckDelete = (projId, ckId) => {
+    const proj = items.find(i => i.id === projId);
+    if (!proj) return;
+    updateItem(projId, { checks: (proj.checks || []).filter(c => c.id !== ckId) });
+  };
+
   /* ─ 자료 → 프로젝트 단일 연결 ─ */
   const doLinkToProject = (resId, projId) => {
     const proj = items.find(i => i.id === projId);
@@ -980,8 +1089,8 @@ export default function MainApp({ user }) {
   };
 
   /* ─ 새 프로젝트 ─ */
-  const doAddProject = ({ title, desc, due }) => {
-    addItem({ type: 'project', title, desc, due, tags: [], linkedIds: [], checks: [], createdAt: today() });
+  const doAddProject = ({ title, due, checks }) => {
+    addItem({ type: 'project', title, due, tags: [], linkedIds: [], checks: checks || [], createdAt: today() });
     setShowAddProj(false);
   };
 
@@ -1032,7 +1141,7 @@ export default function MainApp({ user }) {
       {/* 컨텐츠 */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 80px' }}>
         {tab === 'inbox' && <InboxView items={inbox} projects={projects} allTags={allTags} onProcess={doProcess} onDelete={doDeleteInbox} />}
-        {tab === 'project' && <ProjectView projects={projects} resources={resources} allTags={allTags} onCheck={doCheck} onAddProject={() => setShowAddProj(true)} onLinkResources={doLinkResources} onUnlink={doUnlink} onAIRecommend={doAIRecommend} />}
+        {tab === 'project' && <ProjectView projects={projects} resources={resources} allTags={allTags} onCheck={doCheck} onCheckAdd={doCheckAdd} onCheckDelete={doCheckDelete} onAddProject={() => setShowAddProj(true)} onLinkResources={doLinkResources} onUnlink={doUnlink} onAIRecommend={doAIRecommend} />}
         {tab === 'resource' && <ResourceView items={resources} projects={projects} allTags={allTags} onLinkToProject={doLinkToProject} onDelete={deleteItem} />}
         {tab === 'archive' && <ArchiveView items={archives} allTags={allTags} />}
         {tab === 'settings' && <SettingsView user={user} allTags={allTags} onSaveTags={saveTags} onLogout={doLogout} />}
