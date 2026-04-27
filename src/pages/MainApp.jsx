@@ -357,6 +357,12 @@ function InboxView({ items, projects, allTags, onProcess, onDelete }) {
               style={{ flex: 1, padding: 9, borderRadius: 10, background: 'rgba(124,58,237,.08)', color: '#7C3AED', border: '1px solid rgba(124,58,237,.2)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
               처리하기 →
             </button>
+            {item.url && (
+              <button onClick={() => window.open(item.url, '_blank')}
+                style={{ padding: '9px 12px', borderRadius: 10, background: 'rgba(13,148,136,.08)', color: '#0D9488', border: '0.5px solid rgba(13,148,136,.25)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                🔗 열기
+              </button>
+            )}
             <button onClick={() => onDelete(item.id)}
               style={{ padding: '9px 12px', borderRadius: 10, background: 'rgba(0,0,0,.04)', color: '#aaa', border: '0.5px solid rgba(0,0,0,.08)', cursor: 'pointer', fontSize: 13 }}>
               삭제
@@ -393,7 +399,15 @@ function ResourceView({ items, projects, allTags, onLinkToProject }) {
       {filtered.map(item => (
         <div key={item.id} className="fi" onClick={() => setSel(sel?.id === item.id ? null : item)}
           style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: `0.5px solid ${sel?.id === item.id ? 'rgba(217,119,6,.4)' : 'rgba(0,0,0,.07)'}`, borderLeft: sel?.id === item.id ? '3px solid #D97706' : '0.5px solid rgba(0,0,0,.07)', cursor: 'pointer' }}>
-          {item.url && <div style={{ fontSize: 11, color: isYT(item.url) ? '#DC2626' : '#7C3AED', marginBottom: 5, fontWeight: 500 }}>{isYT(item.url) ? '▶ YouTube' : isIG(item.url) ? '📷 Instagram' : '🔗 링크'}</div>}
+          {item.url && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+              <span style={{ fontSize: 11, color: isYT(item.url) ? '#DC2626' : '#7C3AED', fontWeight: 500 }}>{isYT(item.url) ? '▶ YouTube' : isIG(item.url) ? '📷 Instagram' : '🔗 링크'}</span>
+              <button onClick={e => { e.stopPropagation(); window.open(item.url, '_blank'); }}
+                style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(13,148,136,.08)', color: '#0D9488', border: '0.5px solid rgba(13,148,136,.25)', cursor: 'pointer', fontWeight: 600 }}>
+                열기
+              </button>
+            </div>
+          )}
           <div style={{ fontSize: 15, fontWeight: 500, color: '#111', marginBottom: 6 }}>{item.title}</div>
           {item.note && <div style={{ fontSize: 12, color: '#888', marginBottom: 7, lineHeight: 1.5 }}>{item.note}</div>}
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -730,13 +744,37 @@ export default function MainApp({ user }) {
     delete window.__pendingShare;
     const t = title || url;
     if (!t) return;
+
+    // 1) 먼저 수신함에 저장
     addItem({
       type: 'inbox',
       title: t,
       url: url || '',
-      tags: [], note: '', aiTags: [],
+      tags: [], note: '🤖 AI 요약 중...', aiTags: [],
       createdAt: today(),
+    }).then(async (docRef) => {
+      // 2) AI 요약 + 태그 자동 실행
+      try {
+        const res = await fetch(AI_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: t, url: url || '', userTags: [] }),
+        });
+        const data = await res.json();
+        if (data.summary) {
+          await updateItem(docRef.id, {
+            note: data.summary,
+            aiTags: data.tags || [],
+          });
+        } else {
+          await updateItem(docRef.id, { note: '' });
+        }
+      } catch (e) {
+        console.error('AI 자동 요약 실패', e);
+        await updateItem(docRef.id, { note: '' });
+      }
     });
+
     setTab('inbox');
   }, []);  // eslint-disable-line
 
