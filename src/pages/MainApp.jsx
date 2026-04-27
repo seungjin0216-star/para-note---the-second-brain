@@ -424,20 +424,16 @@ function ReportModal({ item, allTags, onClose }) {
     })();
   }, []);
 
-  // 마크다운 간단 렌더 (굵게, 줄, 체크박스, 테이블)
+  // 마크다운 간단 렌더
   const renderMd = (text) => text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^#{1,3} (.+)$/gm, '<div style="font-size:15px;font-weight:700;color:#111;margin:16px 0 8px">$1</div>')
-    .replace(/^\| (.+) \|$/gm, (row) => {
-      const cols = row.split('|').slice(1,-1).map(c => c.trim());
-      const isHeader = cols.some(c => /^[-:]+$/.test(c));
-      if (isHeader) return '';
-      return `<div style="display:flex;gap:0;margin-bottom:1px">${cols.map(c => `<div style="flex:1;padding:7px 9px;background:#f9f9f7;border:0.5px solid #eee;font-size:12px;line-height:1.5">${c}</div>`).join('')}</div>`;
-    })
-    .replace(/^- \[ \] (.+)$/gm, '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px"><span style="color:#aaa;font-size:16px;line-height:1.2">☐</span><span style="font-size:13px;color:#333">$1</span></div>')
-    .replace(/^- (.+)$/gm, '<div style="display:flex;gap:7px;margin-bottom:5px"><span style="color:#7C3AED;margin-top:2px">•</span><span style="font-size:13px;color:#333;line-height:1.5">$1</span></div>')
-    .replace(/\n\n/g, '<div style="height:8px"></div>')
-    .replace(/---/g, '<hr style="border:none;border-top:0.5px solid #eee;margin:14px 0">');
+    .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#111">$1</strong>')
+    .replace(/^## (.+)$/gm, '<div style="font-size:14px;font-weight:700;color:#7C3AED;margin:18px 0 8px;padding-bottom:5px;border-bottom:1.5px solid rgba(124,58,237,.15)">$1</div>')
+    .replace(/^한 줄 요약: (.+)$/gm, '<div style="background:rgba(124,58,237,.07);border-left:3px solid #7C3AED;padding:10px 12px;border-radius:0 10px 10px 0;font-size:14px;font-weight:600;color:#111;margin-bottom:10px;line-height:1.5">$1</div>')
+    .replace(/^출처: (.+)$/gm, '<div style="font-size:11px;color:#bbb;margin-top:16px;text-align:right">$1</div>')
+    .replace(/^- \[ \] (.+)$/gm, '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:0.5px solid #f5f5f5"><span style="width:20px;height:20px;border:1.5px solid #ddd;border-radius:5px;flex-shrink:0;margin-top:1px;display:inline-block"></span><span style="font-size:13px;color:#333;line-height:1.5">$1</span></div>')
+    .replace(/^• (.+)$/gm, '<div style="display:flex;gap:8px;padding:4px 0"><span style="color:#7C3AED;font-weight:700;flex-shrink:0">›</span><span style="font-size:13px;color:#333;line-height:1.5">$1</span></div>')
+    .replace(/^주요 포인트:$/gm, '<div style="font-size:12px;color:#aaa;font-weight:600;margin:6px 0 2px">주요 포인트</div>')
+    .replace(/\n\n/g, '<div style="height:4px"></div>');
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 400, display: 'flex', alignItems: 'flex-end' }}
@@ -479,10 +475,11 @@ function ReportModal({ item, allTags, onClose }) {
 }
 
 /* ─── 자료함 뷰 ─── */
-function ResourceView({ items, projects, allTags, onLinkToProject }) {
+function ResourceView({ items, projects, allTags, onLinkToProject, onDelete }) {
   const [filter, setFilter]     = useState([]);
   const [sel, setSel]           = useState(null);
   const [reportItem, setReportItem] = useState(null);
+  const [confirmDel, setConfirmDel] = useState(null);
   const usedTags = [...new Set(items.flatMap(i => i.tags))].sort();
   const toggle = t => setFilter(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
   const filtered = filter.length ? items.filter(i => filter.some(t => i.tags.includes(t))) : items;
@@ -501,23 +498,35 @@ function ResourceView({ items, projects, allTags, onLinkToProject }) {
       {filtered.map(item => (
         <div key={item.id} className="fi" onClick={() => setSel(sel?.id === item.id ? null : item)}
           style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: `0.5px solid ${sel?.id === item.id ? 'rgba(217,119,6,.4)' : 'rgba(0,0,0,.07)'}`, borderLeft: sel?.id === item.id ? '3px solid #D97706' : '0.5px solid rgba(0,0,0,.07)', cursor: 'pointer' }}>
-          {item.url && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 11, color: isYT(item.url) ? '#DC2626' : '#7C3AED', fontWeight: 500 }}>
-                {isYT(item.url) ? '▶ YouTube' : isIG(item.url) ? '📷 Instagram' : '🔗 링크'}
-              </span>
-              <button onClick={e => { e.stopPropagation(); window.open(item.url, '_blank'); }}
-                style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(13,148,136,.08)', color: '#0D9488', border: '0.5px solid rgba(13,148,136,.25)', cursor: 'pointer', fontWeight: 600 }}>
-                열기
-              </button>
-              {isYT(item.url) && (
-                <button onClick={e => { e.stopPropagation(); setReportItem(item); }}
-                  style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(124,58,237,.08)', color: '#7C3AED', border: '0.5px solid rgba(124,58,237,.25)', cursor: 'pointer', fontWeight: 600 }}>
-                  📋 AI 리포트
-                </button>
+          {/* 상단: 출처 뱃지 + 버튼들 */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 }}>
+              {item.url && (
+                <>
+                  <span style={{ fontSize: 11, color: isYT(item.url) ? '#DC2626' : '#7C3AED', fontWeight: 500 }}>
+                    {isYT(item.url) ? '▶ YouTube' : isIG(item.url) ? '📷 Instagram' : '🔗 링크'}
+                  </span>
+                  <button onClick={e => { e.stopPropagation(); window.open(item.url, '_blank'); }}
+                    style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(13,148,136,.08)', color: '#0D9488', border: '0.5px solid rgba(13,148,136,.25)', cursor: 'pointer', fontWeight: 600 }}>
+                    열기
+                  </button>
+                  {isYT(item.url) && (
+                    <button onClick={e => { e.stopPropagation(); setReportItem(item); }}
+                      style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(124,58,237,.08)', color: '#7C3AED', border: '0.5px solid rgba(124,58,237,.25)', cursor: 'pointer', fontWeight: 600 }}>
+                      📋 AI 리포트
+                    </button>
+                  )}
+                </>
               )}
             </div>
-          )}
+            {/* 삭제 버튼 */}
+            <button
+              onClick={e => { e.stopPropagation(); setConfirmDel(item.id); }}
+              style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 18, cursor: 'pointer', padding: '0 0 0 8px', lineHeight: 1, flexShrink: 0 }}>
+              ×
+            </button>
+          </div>
+
           <div style={{ fontSize: 15, fontWeight: 500, color: '#111', marginBottom: 6 }}>{item.title}</div>
           {item.note && <div style={{ fontSize: 12, color: '#888', marginBottom: 7, lineHeight: 1.5 }}>{item.note}</div>}
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -540,6 +549,28 @@ function ResourceView({ items, projects, allTags, onLinkToProject }) {
       ))}
       {reportItem && (
         <ReportModal item={reportItem} allTags={allTags} onClose={() => setReportItem(null)} />
+      )}
+
+      {/* 삭제 확인 */}
+      {confirmDel && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setConfirmDel(null)}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '24px 20px', width: '100%', maxWidth: 320 }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 10 }}>🗑️</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', textAlign: 'center', marginBottom: 6 }}>자료를 삭제할까요?</div>
+            <div style={{ fontSize: 12, color: '#aaa', textAlign: 'center', marginBottom: 20 }}>삭제된 자료는 복구할 수 없어요</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setConfirmDel(null)}
+                style={{ flex: 1, padding: 12, borderRadius: 12, background: '#f5f5f3', color: '#555', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                취소
+              </button>
+              <button onClick={() => { onDelete(confirmDel); setConfirmDel(null); setSel(null); }}
+                style={{ flex: 1, padding: 12, borderRadius: 12, background: '#DC2626', color: 'white', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1002,7 +1033,7 @@ export default function MainApp({ user }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 80px' }}>
         {tab === 'inbox' && <InboxView items={inbox} projects={projects} allTags={allTags} onProcess={doProcess} onDelete={doDeleteInbox} />}
         {tab === 'project' && <ProjectView projects={projects} resources={resources} allTags={allTags} onCheck={doCheck} onAddProject={() => setShowAddProj(true)} onLinkResources={doLinkResources} onUnlink={doUnlink} onAIRecommend={doAIRecommend} />}
-        {tab === 'resource' && <ResourceView items={resources} projects={projects} allTags={allTags} onLinkToProject={doLinkToProject} />}
+        {tab === 'resource' && <ResourceView items={resources} projects={projects} allTags={allTags} onLinkToProject={doLinkToProject} onDelete={deleteItem} />}
         {tab === 'archive' && <ArchiveView items={archives} allTags={allTags} />}
         {tab === 'settings' && <SettingsView user={user} allTags={allTags} onSaveTags={saveTags} onLogout={doLogout} />}
       </div>
