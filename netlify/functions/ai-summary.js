@@ -62,13 +62,12 @@ ${hasTags
 응답 형식 (JSON만, 다른 텍스트 없이):
 {"summary":"요약 내용","tags":["태그1","태그2"]}`;
 
+  // 신규 API 키 기준 사용 가능한 최신 모델 우선순위
   const CANDIDATES = [
-    { ver: 'v1beta', model: 'gemini-2.0-flash' },
-    { ver: 'v1beta', model: 'gemini-2.0-flash-lite' },
-    { ver: 'v1beta', model: 'gemini-1.5-flash' },
-    { ver: 'v1',     model: 'gemini-1.5-flash' },
-    { ver: 'v1beta', model: 'gemini-1.5-pro' },
-    { ver: 'v1',     model: 'gemini-pro' },
+    { ver: 'v1beta', model: 'gemini-2.5-flash-lite' },
+    { ver: 'v1beta', model: 'gemini-2.5-flash' },
+    { ver: 'v1beta', model: 'gemini-flash-latest' },
+    { ver: 'v1beta', model: 'gemini-pro-latest' },
   ];
 
   const errors = [];
