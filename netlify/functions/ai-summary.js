@@ -23,6 +23,28 @@ export async function handler(event) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) };
   }
 
+  // 디버그: 사용 가능한 모델 목록 조회
+  if (body._listModels) {
+    try {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`
+      );
+      const d = await r.json();
+      const names = (d.models || []).map(m => m.name);
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ models: names, error: d.error }),
+      };
+    } catch (e) {
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ models: [], fetchError: e.message }),
+      };
+    }
+  }
+
   const { title = '', url = '', userTags = [] } = body;
   const hasTags = userTags.length > 0;
 
@@ -40,19 +62,21 @@ ${hasTags
 응답 형식 (JSON만, 다른 텍스트 없이):
 {"summary":"요약 내용","tags":["태그1","태그2"]}`;
 
-  // gemini-2.0-flash-lite → gemini-1.5-flash → gemini-pro 순으로 시도
-  const MODELS = [
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-latest',
+  const CANDIDATES = [
+    { ver: 'v1beta', model: 'gemini-2.0-flash' },
+    { ver: 'v1beta', model: 'gemini-2.0-flash-lite' },
+    { ver: 'v1beta', model: 'gemini-1.5-flash' },
+    { ver: 'v1',     model: 'gemini-1.5-flash' },
+    { ver: 'v1beta', model: 'gemini-1.5-pro' },
+    { ver: 'v1',     model: 'gemini-pro' },
   ];
 
-  let lastError = null;
+  const errors = [];
 
-  for (const model of MODELS) {
+  for (const { ver, model } of CANDIDATES) {
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -65,23 +89,17 @@ ${hasTags
 
       if (!response.ok) {
         const errText = await response.text();
-        console.error(`Model ${model} failed (${response.status}):`, errText);
-        lastError = `${model}: ${response.status} ${errText}`;
-        continue; // 다음 모델 시도
+        errors.push(`[${ver}/${model}] ${response.status}: ${errText.slice(0, 200)}`);
+        continue;
       }
 
       const data = await response.json();
-
-      // 오류 응답 확인
       if (data.error) {
-        console.error(`Model ${model} API error:`, data.error);
-        lastError = `${model}: ${JSON.stringify(data.error)}`;
+        errors.push(`[${ver}/${model}] API error: ${JSON.stringify(data.error)}`);
         continue;
       }
 
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-      // JSON 파싱 시도
       const match = text.match(/\{[\s\S]*?\}/);
       if (match) {
         const parsed = JSON.parse(match[0]);
@@ -93,23 +111,19 @@ ${hasTags
             tags: hasTags
               ? (parsed.tags || []).filter(t => userTags.includes(t))
               : (parsed.tags || []),
-            _model: model, // 어떤 모델이 응답했는지 (디버그용)
           }),
         };
       }
-
-      console.error(`Model ${model} returned no JSON:`, text);
-      lastError = `${model}: no JSON in response: ${text}`;
-    } catch (err) {
-      console.error(`Model ${model} threw:`, err.message);
-      lastError = `${model}: ${err.message}`;
+      errors.push(`[${ver}/${model}] no JSON in: ${text.slice(0, 100)}`);
+    } catch (e) {
+      errors.push(`[${ver}/${model}] threw: ${e.message}`);
     }
   }
 
-  // 모든 모델 실패
+  console.error('All models failed:', errors);
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ summary: '', tags: [], _error: lastError }),
+    body: JSON.stringify({ summary: '', tags: [], _errors: errors }),
   };
 }
