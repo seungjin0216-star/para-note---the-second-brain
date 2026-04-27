@@ -9,7 +9,11 @@ export async function handler(event) {
 
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
   if (!GEMINI_API_KEY) {
-    return { statusCode: 500, body: JSON.stringify({ error: 'API key not configured' }) };
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'GEMINI_API_KEY not configured' }),
+    };
   }
 
   let body;
@@ -36,44 +40,76 @@ ${hasTags
 응답 형식 (JSON만, 다른 텍스트 없이):
 {"summary":"요약 내용","tags":["태그1","태그2"]}`;
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 300 },
-        }),
+  // gemini-2.0-flash-lite → gemini-1.5-flash → gemini-pro 순으로 시도
+  const MODELS = [
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-latest',
+  ];
+
+  let lastError = null;
+
+  for (const model of MODELS) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 400 },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`Model ${model} failed (${response.status}):`, errText);
+        lastError = `${model}: ${response.status} ${errText}`;
+        continue; // 다음 모델 시도
       }
-    );
 
-    const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const data = await response.json();
 
-    // JSON 파싱 시도
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      const parsed = JSON.parse(match[0]);
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          summary: parsed.summary || '',
-          // userTags가 있으면 목록 내 태그만, 없으면 AI 추천 태그 그대로 사용
-          tags: hasTags
-            ? (parsed.tags || []).filter(t => userTags.includes(t))
-            : (parsed.tags || []),
-        }),
-      };
+      // 오류 응답 확인
+      if (data.error) {
+        console.error(`Model ${model} API error:`, data.error);
+        lastError = `${model}: ${JSON.stringify(data.error)}`;
+        continue;
+      }
+
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      // JSON 파싱 시도
+      const match = text.match(/\{[\s\S]*?\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        return {
+          statusCode: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            summary: parsed.summary || '',
+            tags: hasTags
+              ? (parsed.tags || []).filter(t => userTags.includes(t))
+              : (parsed.tags || []),
+            _model: model, // 어떤 모델이 응답했는지 (디버그용)
+          }),
+        };
+      }
+
+      console.error(`Model ${model} returned no JSON:`, text);
+      lastError = `${model}: no JSON in response: ${text}`;
+    } catch (err) {
+      console.error(`Model ${model} threw:`, err.message);
+      lastError = `${model}: ${err.message}`;
     }
-    throw new Error('No JSON in response');
-  } catch (err) {
-    console.error('Gemini error:', err);
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ summary: '', tags: [] }),
-    };
   }
+
+  // 모든 모델 실패
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ summary: '', tags: [], _error: lastError }),
+  };
 }
