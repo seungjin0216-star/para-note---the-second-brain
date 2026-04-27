@@ -20,6 +20,7 @@ export async function handler(event) {
   }
 
   const { title = '', url = '', userTags = [] } = body;
+  const hasTags = userTags.length > 0;
 
   const prompt = `당신은 PARA 방법론 기반 노트앱의 AI 어시스턴트입니다.
 
@@ -27,11 +28,10 @@ export async function handler(event) {
 - 제목/내용: ${title}
 ${url ? `- URL: ${url}` : ''}
 
-사용자의 태그 목록: ${userTags.join(', ')}
-
-다음 두 가지를 JSON으로 응답하세요:
-1. summary: 핵심 내용을 2-3문장으로 한국어 요약 (URL이 없으면 제목을 기반으로 추측)
-2. tags: 위 태그 목록에서 가장 관련성 높은 태그 1-3개 선택 (반드시 목록에 있는 태그만)
+${hasTags
+  ? `사용자의 태그 목록: ${userTags.join(', ')}\n\n다음 두 가지를 JSON으로 응답하세요:\n1. summary: 핵심 내용을 2-3문장으로 한국어 요약\n2. tags: 위 태그 목록에서 가장 관련성 높은 태그 1-3개 선택 (반드시 목록에 있는 태그만)`
+  : `다음 두 가지를 JSON으로 응답하세요:\n1. summary: 핵심 내용을 2-3문장으로 한국어 요약\n2. tags: 이 콘텐츠에 어울리는 한국어 태그 1-3개를 자유롭게 추천 (예: 자기계발, 투자, 건강 등)`
+}
 
 응답 형식 (JSON만, 다른 텍스트 없이):
 {"summary":"요약 내용","tags":["태그1","태그2"]}`;
@@ -61,7 +61,10 @@ ${url ? `- URL: ${url}` : ''}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           summary: parsed.summary || '',
-          tags: (parsed.tags || []).filter(t => userTags.includes(t)),
+          // userTags가 있으면 목록 내 태그만, 없으면 AI 추천 태그 그대로 사용
+          tags: hasTags
+            ? (parsed.tags || []).filter(t => userTags.includes(t))
+            : (parsed.tags || []),
         }),
       };
     }

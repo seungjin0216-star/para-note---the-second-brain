@@ -1,4 +1,4 @@
-export default function LoginPage({ onLogin }) {
+export default function LoginPage({ onLogin, loginError }) {
   return (
     <div style={{
       height: '100%', display: 'flex', flexDirection: 'column',
@@ -58,7 +58,12 @@ export default function LoginPage({ onLogin }) {
         Google로 시작하기
       </button>
 
-      <div style={{ fontSize: 11, color: '#ccc', marginTop: 20, textAlign: 'center' }}>
+      {loginError && (
+        <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 10, background: 'rgba(220,38,38,.07)', border: '0.5px solid rgba(220,38,38,.2)', color: '#DC2626', fontSize: 13, textAlign: 'center', maxWidth: 320, width: '100%' }}>
+          {loginError}
+        </div>
+      )}
+      <div style={{ fontSize: 11, color: '#ccc', marginTop: 16, textAlign: 'center' }}>
         로그인 시 나만의 데이터 공간이 생성됩니다
       </div>
     </div>
