@@ -4,7 +4,7 @@ import LoginPage from './pages/LoginPage';
 import MainApp  from './pages/MainApp';
 
 export default function App() {
-  const { user, loading, login, loginError } = useAuth();
+  const { user, loading, login, loginError, loginLoading } = useAuth();
 
   // URL 파라미터 캡처는 main.jsx에서 React 시작 전에 처리됨
   // (window.__pendingShare 에 저장 → MainApp에서 소비)
@@ -27,6 +27,6 @@ export default function App() {
     );
   }
 
-  if (!user) return <LoginPage onLogin={login} loginError={loginError} />;
+  if (!user) return <LoginPage onLogin={login} loginError={loginError} loginLoading={loginLoading} />;
   return <MainApp user={user} />;
 }

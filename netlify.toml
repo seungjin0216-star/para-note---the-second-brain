@@ -5,16 +5,7 @@
 [functions]
   directory = "netlify/functions"
 
-# ── Firebase Auth 프록시 (iOS Safari ITP 우회) ──────────────────────────────
-# authDomain을 paranote.netlify.app으로 설정했기 때문에
-# /__/auth/* 요청을 Firebase의 실제 핸들러로 포워딩해야 함
-[[redirects]]
-  from = "/__/auth/*"
-  to = "https://exobrain-paranote.firebaseapp.com/__/auth/:splat"
-  status = 200
-  force = true
-
-# ── SPA 라우팅 — 모든 경로를 index.html로 ───────────────────────────────────
+# SPA 라우팅 — 모든 경로를 index.html로
 [[redirects]]
   from = "/*"
   to = "/index.html"
