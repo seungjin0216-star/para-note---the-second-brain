@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useItems, useUserTags } from '../hooks/useItems';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { AI_ENDPOINT, AI_WEEKLY_ENDPOINT, AI_RECOMMEND_ENDPOINT } from '../constants';
+import { AI_ENDPOINT, AI_WEEKLY_ENDPOINT, AI_RECOMMEND_ENDPOINT, AI_REPORT_ENDPOINT } from '../constants';
 
 /* ─── 유틸 ─── */
 const dday = d => { if (!d) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); };
@@ -44,36 +44,37 @@ function DDay({ due }) {
   </span>;
 }
 
-/* ─── 수집 모달 (AI 요약 포함) ─── */
+/* ─── 수집 모달 (메모 중심) ─── */
 function CaptureModal({ onClose, onSave, allTags }) {
-  const [title, setTitle] = useState('');
-  const [note, setNote] = useState('');
+  const [title, setTitle]         = useState('');
+  const [memo, setMemo]           = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiSuggested, setAiSuggested] = useState(null); // {summary, tags}
-  const ref = useRef();
-  useEffect(() => { setTimeout(() => ref.current?.focus(), 100); }, []);
+  const [aiTags, setAiTags]       = useState([]);
+  const memoRef = useRef();
+  useEffect(() => { setTimeout(() => memoRef.current?.focus(), 100); }, []);
 
   const runAI = async () => {
-    if (!title.trim()) return;
+    const content = memo.trim() || title.trim();
+    if (!content) return;
     setAiLoading(true);
     try {
       const res = await fetch(AI_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, url: title.startsWith('http') ? title : '', userTags: allTags }),
+        body: JSON.stringify({ title: content, url: '', userTags: allTags }),
       });
       const data = await res.json();
-      if (data.summary) {
-        setAiSuggested(data);
-        setNote(data.summary);
-      }
-    } catch (e) { console.error('AI 요약 실패', e); }
+      if (data.tags?.length) setAiTags(data.tags);
+    } catch (e) { console.error('AI 태그 추천 실패', e); }
     setAiLoading(false);
   };
 
+  const canSave = memo.trim() || title.trim();
   const handleSave = () => {
-    if (!title.trim()) return;
-    onSave({ title, note, aiTags: aiSuggested?.tags || [] });
+    if (!canSave) return;
+    const effectiveTitle = title.trim() || memo.trim().split('\n')[0].slice(0, 60);
+    const effectiveMemo  = title.trim() ? memo.trim() : memo.trim().slice(effectiveTitle.length).trim();
+    onSave({ title: effectiveTitle, note: effectiveMemo, aiTags });
   };
 
   return (
@@ -81,36 +82,58 @@ function CaptureModal({ onClose, onSave, allTags }) {
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="su" style={{ background: '#fff', borderRadius: '22px 22px 0 0', width: '100%', padding: '20px 18px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
         <div style={{ width: 36, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 16px' }} />
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 3 }}>✏️ 빠른 수집</div>
-        <div style={{ fontSize: 12, color: '#aaa', marginBottom: 14 }}>지금 생각, 링크, 영감 — 분류 없이 수신함으로</div>
-        <input ref={ref} value={title} onChange={e => setTitle(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && title.trim() && handleSave()}
-          placeholder="생각이나 URL을 붙여넣어요..."
-          style={{ width: '100%', padding: '13px 15px', borderRadius: 13, border: '1.5px solid rgba(124,58,237,.3)', background: '#faf9ff', fontSize: 15, color: '#111', outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 3 }}>✏️ 메모 수집</div>
+        <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>지금 떠오른 생각을 바로 던져두세요</div>
 
-        {/* AI 요약 버튼 */}
-        {title.trim() && !aiSuggested && (
+        {/* 메모 (메인) */}
+        <textarea
+          ref={memoRef}
+          value={memo}
+          onChange={e => setMemo(e.target.value)}
+          placeholder="지금 생각나는 것, 아이디어, 메모…"
+          rows={5}
+          style={{
+            width: '100%', padding: '14px 15px', borderRadius: 14,
+            border: '1.5px solid rgba(124,58,237,.3)', background: '#faf9ff',
+            fontSize: 15, color: '#111', outline: 'none', resize: 'none',
+            marginBottom: 10, fontFamily: 'inherit', boxSizing: 'border-box',
+            lineHeight: 1.6,
+          }}
+        />
+
+        {/* 제목 (선택) */}
+        <input
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="제목 (선택 — 비우면 첫 줄 자동 사용)"
+          style={{
+            width: '100%', padding: '11px 14px', borderRadius: 12,
+            border: '0.5px solid rgba(0,0,0,.12)', background: '#f9f9f7',
+            fontSize: 13, color: '#333', outline: 'none',
+            marginBottom: 10, boxSizing: 'border-box',
+          }}
+        />
+
+        {/* AI 태그 추천 */}
+        {canSave && !aiTags.length && (
           <button onClick={runAI} disabled={aiLoading}
-            style={{ width: '100%', padding: '10px', borderRadius: 12, border: '1px solid rgba(124,58,237,.25)', background: 'rgba(124,58,237,.06)', color: '#7C3AED', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            {aiLoading ? <><span className="spin" style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #7C3AED', borderTopColor: 'transparent', borderRadius: '50%' }} /> AI 분석 중...</> : '🤖 AI 요약 + 태그 추천'}
+            style={{ width: '100%', padding: 10, borderRadius: 12, border: '1px solid rgba(124,58,237,.25)', background: 'rgba(124,58,237,.06)', color: '#7C3AED', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            {aiLoading
+              ? <><span className="spin" style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #7C3AED', borderTopColor: 'transparent', borderRadius: '50%' }} /> 분석 중...</>
+              : '🤖 AI 태그 추천'}
           </button>
         )}
-
-        {/* AI 추천 태그 */}
-        {aiSuggested?.tags?.length > 0 && (
+        {aiTags.length > 0 && (
           <div style={{ marginBottom: 10, padding: '10px 12px', background: 'rgba(124,58,237,.06)', borderRadius: 12, border: '0.5px solid rgba(124,58,237,.15)' }}>
             <div style={{ fontSize: 11, color: '#7C3AED', fontWeight: 600, marginBottom: 6 }}>🤖 AI 추천 태그</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {aiSuggested.tags.map(t => <Tag key={t} label={t} selected allTags={allTags} size="sm" />)}
+              {aiTags.map(t => <Tag key={t} label={t} selected allTags={allTags} size="sm" />)}
             </div>
           </div>
         )}
 
-        <textarea value={note} onChange={e => setNote(e.target.value)}
-          placeholder="메모 (선택)" rows={2}
-          style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,.12)', background: '#f9f9f7', fontSize: 13, color: '#333', outline: 'none', resize: 'none', marginBottom: 14, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-        <button onClick={handleSave}
-          style={{ width: '100%', padding: 15, borderRadius: 14, background: title.trim() ? '#7C3AED' : '#e5e5e5', color: title.trim() ? 'white' : '#aaa', border: 'none', cursor: title.trim() ? 'pointer' : 'default', fontSize: 15, fontWeight: 700 }}>
+        <button onClick={handleSave} disabled={!canSave}
+          style={{ width: '100%', padding: 15, borderRadius: 14, background: canSave ? '#7C3AED' : '#e5e5e5', color: canSave ? 'white' : '#aaa', border: 'none', cursor: canSave ? 'pointer' : 'default', fontSize: 15, fontWeight: 700 }}>
           📥 수신함에 저장
         </button>
       </div>
@@ -377,10 +400,89 @@ function InboxView({ items, projects, allTags, onProcess, onDelete }) {
   );
 }
 
+/* ─── 인텔리전스 리포트 모달 ─── */
+function ReportModal({ item, allTags, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [report, setReport]   = useState('');
+  const [error, setError]     = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(AI_REPORT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: item.url, title: item.title, userTags: allTags }),
+        });
+        const data = await res.json();
+        if (data.report) setReport(data.report);
+        else setError('리포트 생성에 실패했어요.');
+      } catch (e) {
+        setError('네트워크 오류가 발생했어요.');
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  // 마크다운 간단 렌더 (굵게, 줄, 체크박스, 테이블)
+  const renderMd = (text) => text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^#{1,3} (.+)$/gm, '<div style="font-size:15px;font-weight:700;color:#111;margin:16px 0 8px">$1</div>')
+    .replace(/^\| (.+) \|$/gm, (row) => {
+      const cols = row.split('|').slice(1,-1).map(c => c.trim());
+      const isHeader = cols.some(c => /^[-:]+$/.test(c));
+      if (isHeader) return '';
+      return `<div style="display:flex;gap:0;margin-bottom:1px">${cols.map(c => `<div style="flex:1;padding:7px 9px;background:#f9f9f7;border:0.5px solid #eee;font-size:12px;line-height:1.5">${c}</div>`).join('')}</div>`;
+    })
+    .replace(/^- \[ \] (.+)$/gm, '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px"><span style="color:#aaa;font-size:16px;line-height:1.2">☐</span><span style="font-size:13px;color:#333">$1</span></div>')
+    .replace(/^- (.+)$/gm, '<div style="display:flex;gap:7px;margin-bottom:5px"><span style="color:#7C3AED;margin-top:2px">•</span><span style="font-size:13px;color:#333;line-height:1.5">$1</span></div>')
+    .replace(/\n\n/g, '<div style="height:8px"></div>')
+    .replace(/---/g, '<hr style="border:none;border-top:0.5px solid #eee;margin:14px 0">');
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 400, display: 'flex', alignItems: 'flex-end' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#fff', borderRadius: '22px 22px 0 0', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+        {/* 헤더 */}
+        <div style={{ padding: '12px 18px 10px', borderBottom: '0.5px solid #f0f0f0', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 14px' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: 13, color: '#7C3AED', fontWeight: 700, marginBottom: 3 }}>📋 인텔리전스 리포트</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#111', lineHeight: 1.4 }}>{item.title}</div>
+            </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: '#aaa', cursor: 'pointer', padding: 0 }}>×</button>
+          </div>
+        </div>
+        {/* 본문 */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 32px' }}>
+          {loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0', gap: 14 }}>
+              <span className="spin" style={{ display: 'block', width: 36, height: 36, border: '3px solid #7C3AED', borderTopColor: 'transparent', borderRadius: '50%' }} />
+              <div style={{ fontSize: 13, color: '#aaa', textAlign: 'center', lineHeight: 1.7 }}>
+                자막 분석 중…<br />
+                <span style={{ fontSize: 11 }}>영상 길이에 따라 10~20초 소요됩니다</span>
+              </div>
+            </div>
+          )}
+          {error && <div style={{ color: '#DC2626', fontSize: 13, textAlign: 'center', padding: 20 }}>{error}</div>}
+          {report && (
+            <div
+              style={{ fontSize: 13, color: '#333', lineHeight: 1.7 }}
+              dangerouslySetInnerHTML={{ __html: renderMd(report) }}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── 자료함 뷰 ─── */
 function ResourceView({ items, projects, allTags, onLinkToProject }) {
-  const [filter, setFilter] = useState([]);
-  const [sel, setSel] = useState(null);
+  const [filter, setFilter]     = useState([]);
+  const [sel, setSel]           = useState(null);
+  const [reportItem, setReportItem] = useState(null);
   const usedTags = [...new Set(items.flatMap(i => i.tags))].sort();
   const toggle = t => setFilter(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
   const filtered = filter.length ? items.filter(i => filter.some(t => i.tags.includes(t))) : items;
@@ -400,12 +502,20 @@ function ResourceView({ items, projects, allTags, onLinkToProject }) {
         <div key={item.id} className="fi" onClick={() => setSel(sel?.id === item.id ? null : item)}
           style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: `0.5px solid ${sel?.id === item.id ? 'rgba(217,119,6,.4)' : 'rgba(0,0,0,.07)'}`, borderLeft: sel?.id === item.id ? '3px solid #D97706' : '0.5px solid rgba(0,0,0,.07)', cursor: 'pointer' }}>
           {item.url && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-              <span style={{ fontSize: 11, color: isYT(item.url) ? '#DC2626' : '#7C3AED', fontWeight: 500 }}>{isYT(item.url) ? '▶ YouTube' : isIG(item.url) ? '📷 Instagram' : '🔗 링크'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, color: isYT(item.url) ? '#DC2626' : '#7C3AED', fontWeight: 500 }}>
+                {isYT(item.url) ? '▶ YouTube' : isIG(item.url) ? '📷 Instagram' : '🔗 링크'}
+              </span>
               <button onClick={e => { e.stopPropagation(); window.open(item.url, '_blank'); }}
                 style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(13,148,136,.08)', color: '#0D9488', border: '0.5px solid rgba(13,148,136,.25)', cursor: 'pointer', fontWeight: 600 }}>
                 열기
               </button>
+              {isYT(item.url) && (
+                <button onClick={e => { e.stopPropagation(); setReportItem(item); }}
+                  style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: 'rgba(124,58,237,.08)', color: '#7C3AED', border: '0.5px solid rgba(124,58,237,.25)', cursor: 'pointer', fontWeight: 600 }}>
+                  📋 AI 리포트
+                </button>
+              )}
             </div>
           )}
           <div style={{ fontSize: 15, fontWeight: 500, color: '#111', marginBottom: 6 }}>{item.title}</div>
@@ -428,6 +538,9 @@ function ResourceView({ items, projects, allTags, onLinkToProject }) {
           )}
         </div>
       ))}
+      {reportItem && (
+        <ReportModal item={reportItem} allTags={allTags} onClose={() => setReportItem(null)} />
+      )}
     </div>
   );
 }
@@ -745,15 +858,15 @@ export default function MainApp({ user }) {
     const t = title || url;
     if (!t) return;
 
-    // 1) 먼저 수신함에 저장
+    // 1) 먼저 수신함에 저장 (제목 임시 = URL/title)
     addItem({
       type: 'inbox',
       title: t,
       url: url || '',
-      tags: [], note: '🤖 AI 요약 중...', aiTags: [],
+      tags: [], note: '🤖 AI 분석 중...', aiTags: [],
       createdAt: today(),
     }).then(async (docRef) => {
-      // 2) AI 요약 + 태그 자동 실행
+      // 2) AI 요약 + 태그 + 실제 제목 자동 추출
       try {
         const res = await fetch(AI_ENDPOINT, {
           method: 'POST',
@@ -761,14 +874,13 @@ export default function MainApp({ user }) {
           body: JSON.stringify({ title: t, url: url || '', userTags: [] }),
         });
         const data = await res.json();
-        if (data.summary) {
-          await updateItem(docRef.id, {
-            note: data.summary,
-            aiTags: data.tags || [],
-          });
-        } else {
-          await updateItem(docRef.id, { note: '' });
-        }
+        const updates = {
+          note:   data.summary || '',
+          aiTags: data.tags    || [],
+        };
+        // 실제 유튜브 제목이 있으면 저장
+        if (data.fetchedTitle) updates.title = data.fetchedTitle;
+        await updateItem(docRef.id, updates);
       } catch (e) {
         console.error('AI 자동 요약 실패', e);
         await updateItem(docRef.id, { note: '' });
@@ -786,8 +898,7 @@ export default function MainApp({ user }) {
 
   /* ─ 수집 ─ */
   const doCapture = ({ title, note, aiTags }) => {
-    const isURL = title.startsWith('http');
-    addItem({ type: 'inbox', title, url: isURL ? title : '', tags: [], note, aiTags: aiTags || [], createdAt: today() });
+    addItem({ type: 'inbox', title, url: '', tags: [], note, aiTags: aiTags || [], createdAt: today() });
     setShowCap(false);
   };
 
