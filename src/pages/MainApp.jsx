@@ -104,11 +104,16 @@ function CaptureModal({ onClose, onSave, allTags }) {
 
 /* ─── ProcessModal (myNote 추가) ─── */
 function ProcessModal({ item, projects, allTags, onClose, onProcess }) {
-  const [tags,setTags] = useState(item.aiTags || []);
+  // aiTags 중 실제 userTags에 있는 것만 초기 선택
+  const [tags,setTags] = useState((item.aiTags||[]).filter(t=>allTags.includes(t)));
   const [dest,setDest] = useState('resource');
   const [projId,setProjId] = useState(projects[0]?.id || null);
   const [myNote,setMyNote] = useState('');
+  const [tagSearch,setTagSearch] = useState('');
   const toggle = t => setTags(p => p.includes(t) ? p.filter(x=>x!==t) : [...p,t]);
+  const filteredTags = tagSearch.trim()
+    ? allTags.filter(t => t.includes(tagSearch.replace(/^#/,'')))
+    : allTags;
 
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:300,display:'flex',alignItems:'flex-end'}} onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -122,9 +127,34 @@ function ProcessModal({ item, projects, allTags, onClose, onProcess }) {
         </div>
         <div style={{flex:1,overflowY:'auto',padding:'16px 18px'}}>
           <div style={{marginBottom:18}}>
-            <div style={{fontSize:13,fontWeight:600,color:'#333',marginBottom:4}}>태그 선택 <span style={{color:'#aaa',fontWeight:400,fontSize:11}}>— 1개 이상 필수</span></div>
-            <div style={{display:'flex',gap:7,flexWrap:'wrap',marginTop:10}}>
-              {allTags.map(t=><Tag key={t} label={t} selected={tags.includes(t)} onToggle={toggle} allTags={allTags}/>)}
+            <div style={{fontSize:13,fontWeight:600,color:'#333',marginBottom:8}}>태그 선택 <span style={{color:'#aaa',fontWeight:400,fontSize:11}}>— 1개 이상 필수</span></div>
+            {/* 태그 검색 */}
+            <div style={{position:'relative',marginBottom:10}}>
+              <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:14,color:'#bbb',pointerEvents:'none'}}>#</span>
+              <input
+                value={tagSearch} onChange={e=>setTagSearch(e.target.value)}
+                placeholder="태그 검색... (예: 수 → 수영, 수련…)"
+                style={{width:'100%',padding:'9px 12px 9px 26px',borderRadius:10,border:'1px solid rgba(124,58,237,.2)',background:'#faf9ff',fontSize:13,color:'#333',outline:'none',boxSizing:'border-box'}}
+              />
+              {tagSearch && <button onClick={()=>setTagSearch('')} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#bbb',fontSize:16,cursor:'pointer',padding:0,lineHeight:1}}>×</button>}
+            </div>
+            {/* 선택된 태그 */}
+            {tags.length > 0 && (
+              <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8,padding:'8px 10px',background:'rgba(124,58,237,.04)',borderRadius:10,border:'0.5px solid rgba(124,58,237,.15)'}}>
+                <span style={{fontSize:11,color:'#7C3AED',fontWeight:600,width:'100%',marginBottom:2}}>선택됨</span>
+                {tags.map(t=>(
+                  <button key={t} onClick={()=>toggle(t)} style={{display:'inline-flex',alignItems:'center',gap:4,padding:'3px 9px',borderRadius:20,background:TAG_PALETTE[allTags.indexOf(t)%TAG_PALETTE.length]||'#7C3AED',color:'white',border:'none',cursor:'pointer',fontSize:12,fontWeight:600}}>
+                    #{t} <span style={{fontSize:14,lineHeight:1}}>×</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* 필터된 태그 목록 */}
+            <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+              {filteredTags.length === 0
+                ? <div style={{fontSize:12,color:'#bbb',padding:'8px 0'}}>"{tagSearch}" 와 일치하는 태그가 없어요</div>
+                : filteredTags.map(t=><Tag key={t} label={t} selected={tags.includes(t)} onToggle={toggle} allTags={allTags}/>)
+              }
             </div>
           </div>
           <div style={{marginBottom:16}}>
@@ -899,6 +929,11 @@ function SettingsModal({ user, allTags, onSaveTags, onLogout, onClose }) {
   const [newTag,setNewTag]         = useState('');
   const [weeklyLoading,setWeeklyLoading] = useState(false);
   const [weeklyResult,setWeeklyResult]   = useState(null);
+  const [showShortcutGuide,setShowShortcutGuide] = useState(false);
+  const [copied,setCopied] = useState(false);
+  const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const shortcutUrl = `${appUrl}/?inbox=`;
+  const copyUrl = () => { navigator.clipboard.writeText(shortcutUrl).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); };
 
   const addTag = () => { const t=newTag.trim().replace(/^#/,''); if(!t||editTags.includes(t)) return; setEditTags(p=>[...p,t]); setNewTag(''); };
   const removeTag = t => setEditTags(p=>p.filter(x=>x!==t));
@@ -975,13 +1010,149 @@ function SettingsModal({ user, allTags, onSaveTags, onLogout, onClose }) {
               </div>
             )}
           </Card>
-          <Card title="공유 기능 (PWA 설치 후)">
-            <div style={{fontSize:13,color:'#555',lineHeight:1.7}}>📱 앱 설치 후 유튜브·인스타 등에서<br/><b>공유 → 제2의뇌</b> 선택하면<br/>수신함에 자동으로 저장됩니다.</div>
-            <div style={{marginTop:10,padding:'10px 12px',background:'#f9f9f7',borderRadius:10,fontSize:11,color:'#aaa',lineHeight:1.6}}>
-              Android: Chrome → 메뉴 → 홈 화면에 추가<br/>iOS 16.4+: Safari → 공유 → 홈 화면에 추가
+          <Card title="📱 공유 설정">
+            {/* Android */}
+            <div style={{padding:'12px',background:'rgba(13,148,136,.05)',borderRadius:12,border:'0.5px solid rgba(13,148,136,.2)',marginBottom:10}}>
+              <div style={{fontSize:13,fontWeight:600,color:'#0D9488',marginBottom:6}}>🤖 Android (자동)</div>
+              <div style={{fontSize:12,color:'#555',lineHeight:1.7}}>Chrome → 메뉴 → <b>홈 화면에 추가</b><br/>설치 후 유튜브·인스타에서 공유 → 제2의뇌 선택</div>
+            </div>
+            {/* iOS */}
+            <div style={{padding:'12px',background:'rgba(124,58,237,.05)',borderRadius:12,border:'0.5px solid rgba(124,58,237,.2)'}}>
+              <div style={{fontSize:13,fontWeight:600,color:'#7C3AED',marginBottom:6}}>🍎 iPhone (단축어 설정)</div>
+              <div style={{fontSize:12,color:'#555',lineHeight:1.7,marginBottom:10}}>iOS는 PWA 공유가 제한되어 <b>단축어 앱</b>을 이용합니다.<br/>한 번만 설정하면 공유 버튼에서 바로 사용 가능!</div>
+              <a href="https://www.icloud.com/shortcuts/88a76da4e7f3479ea3fd75d1a8b9d3ee" target="_blank" rel="noopener noreferrer" style={{display:'block',width:'100%',padding:'12px',borderRadius:10,background:'linear-gradient(135deg,#7C3AED,#a78bfa)',color:'white',border:'none',cursor:'pointer',fontSize:14,fontWeight:700,textAlign:'center',textDecoration:'none',boxShadow:'0 4px 14px rgba(124,58,237,.35)'}}>
+                ⚡ 단축어 한 번에 설치하기
+              </a>
+              <div style={{fontSize:11,color:'#aaa',textAlign:'center',marginTop:6,marginBottom:4}}>탭 → "단축어 추가" 한 번만 누르면 끝!</div>
+              <button onClick={()=>setShowShortcutGuide(p=>!p)} style={{width:'100%',padding:'8px',borderRadius:10,background:'transparent',color:'#999',border:'0.5px solid #ddd',cursor:'pointer',fontSize:12,marginTop:4}}>
+                {showShortcutGuide ? '▲ 닫기' : '직접 만들고 싶다면? 가이드 보기'}
+              </button>
+              {showShortcutGuide && (
+                <div style={{marginTop:12}}>
+                  {/* URL 복사 영역 */}
+                  <div style={{background:'#f3f0ff',borderRadius:10,padding:'10px 12px',marginBottom:14,border:'1px dashed rgba(124,58,237,.3)'}}>
+                    <div style={{fontSize:11,color:'#7C3AED',fontWeight:600,marginBottom:4}}>단축어에 사용할 URL</div>
+                    <div style={{fontSize:11,color:'#444',fontFamily:'monospace',wordBreak:'break-all',marginBottom:8}}>{shortcutUrl}<span style={{color:'#aaa'}}>입력값</span></div>
+                    <button onClick={copyUrl} style={{width:'100%',padding:'8px',borderRadius:8,background:copied?'#0D9488':'#7C3AED',color:'white',border:'none',cursor:'pointer',fontSize:12,fontWeight:600,transition:'background .2s'}}>
+                      {copied ? '✓ 복사됨!' : '📋 URL 복사하기'}
+                    </button>
+                  </div>
+                  {/* 단계별 가이드 */}
+                  {[
+                    { n:'1', ico:'📱', title:'단축어 앱 열기', desc:'아이폰 기본 앱 "단축어"를 실행하세요.' },
+                    { n:'2', ico:'➕', title:'새 단축어 만들기', desc:'우측 상단 + 버튼을 눌러 새 단축어를 생성합니다.' },
+                    { n:'3', ico:'🔍', title:'"URL 열기" 액션 추가', desc:'액션 추가 → 검색창에 "URL 열기" 입력 → 선택' },
+                    { n:'4', ico:'🔗', title:'URL 입력', desc:'URL 필드를 탭 → 위 URL을 붙여넣기 → 맨 뒤에 커서 위치 확인 후 "단축어 입력" 변수를 추가합니다. (변수 버튼: 키보드 위 글로브 아이콘)' },
+                    { n:'5', ico:'⚙️', title:'공유 시트 설정', desc:'단축어 이름 옆 ⓘ 버튼 → "공유 시트에 표시" 켜기 → 유형: URL 선택' },
+                    { n:'6', ico:'✅', title:'저장 & 테스트', desc:'완료 버튼 저장 → 유튜브·인스타에서 공유 버튼 → 단축어 앱 선택 → 방금 만든 단축어 탭!' },
+                  ].map(s=>(
+                    <div key={s.n} style={{display:'flex',gap:10,marginBottom:12,alignItems:'flex-start'}}>
+                      <div style={{width:24,height:24,borderRadius:'50%',background:'#7C3AED',color:'white',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>{s.n}</div>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:600,color:'#222',marginBottom:2}}>{s.ico} {s.title}</div>
+                        <div style={{fontSize:12,color:'#666',lineHeight:1.6}}>{s.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{padding:'10px 12px',background:'rgba(217,119,6,.07)',borderRadius:10,border:'0.5px solid rgba(217,119,6,.25)',marginTop:4}}>
+                    <div style={{fontSize:11,color:'#D97706',fontWeight:600,marginBottom:3}}>💡 팁</div>
+                    <div style={{fontSize:11,color:'#78350F',lineHeight:1.6}}>Safari → 공유 → "홈 화면에 추가"로 앱을 먼저 설치하면, 단축어 실행 시 앱이 바로 열리고 수신함에 자동 추가됩니다.</div>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
           <div style={{textAlign:'center',fontSize:11,color:'#ccc',padding:16}}>제2의뇌 v2.0.0</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── ShortcutView ─── */
+function ShortcutView() {
+  const [step, setStep] = useState(null); // null | 'android' | 'ios'
+  return (
+    <div style={{paddingBottom:16}}>
+      {/* 헤더 */}
+      <div style={{background:'linear-gradient(135deg,#7C3AED,#a78bfa)',borderRadius:20,padding:'24px 20px',marginBottom:20,textAlign:'center',color:'white'}}>
+        <div style={{fontSize:36,marginBottom:8}}>⚡</div>
+        <div style={{fontSize:18,fontWeight:700,marginBottom:4}}>공유 기능 설정</div>
+        <div style={{fontSize:13,opacity:.85,lineHeight:1.6}}>유튜브·인스타 등에서 공유 버튼만 누르면<br/>수신함에 자동 저장돼요</div>
+      </div>
+
+      {/* 기기 선택 */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:20}}>
+        <button onClick={()=>setStep(step==='android'?null:'android')} style={{padding:'18px 12px',borderRadius:16,border:`2px solid ${step==='android'?'#0D9488':'rgba(0,0,0,.1)'}`,background:step==='android'?'rgba(13,148,136,.06)':'#fff',cursor:'pointer',textAlign:'center'}}>
+          <div style={{fontSize:28,marginBottom:6}}>🤖</div>
+          <div style={{fontSize:14,fontWeight:700,color:step==='android'?'#0D9488':'#222'}}>Android</div>
+          <div style={{fontSize:11,color:'#aaa',marginTop:2}}>자동 지원</div>
+        </button>
+        <button onClick={()=>setStep(step==='ios'?null:'ios')} style={{padding:'18px 12px',borderRadius:16,border:`2px solid ${step==='ios'?'#7C3AED':'rgba(0,0,0,.1)'}`,background:step==='ios'?'rgba(124,58,237,.06)':'#fff',cursor:'pointer',textAlign:'center'}}>
+          <div style={{fontSize:28,marginBottom:6}}>🍎</div>
+          <div style={{fontSize:14,fontWeight:700,color:step==='ios'?'#7C3AED':'#222'}}>iPhone</div>
+          <div style={{fontSize:11,color:'#aaa',marginTop:2}}>단축어 설치</div>
+        </button>
+      </div>
+
+      {/* Android 가이드 */}
+      {step==='android' && (
+        <div style={{background:'#fff',borderRadius:16,border:'0.5px solid rgba(0,0,0,.08)',padding:'18px 16px',marginBottom:16}}>
+          <div style={{fontSize:14,fontWeight:700,color:'#0D9488',marginBottom:14}}>🤖 Android 설정</div>
+          {[
+            {n:'1',t:'앱 설치',d:'Chrome 브라우저에서 앱 접속 → 메뉴(⋮) → 홈 화면에 추가'},
+            {n:'2',t:'공유 테스트',d:'유튜브 앱에서 영상 공유 버튼 → 목록에서 "제2의뇌" 선택'},
+            {n:'3',t:'완료!',d:'수신함에 자동으로 저장됩니다 ✅'},
+          ].map(s=>(
+            <div key={s.n} style={{display:'flex',gap:12,marginBottom:12,alignItems:'flex-start'}}>
+              <div style={{width:26,height:26,borderRadius:'50%',background:'#0D9488',color:'white',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{s.n}</div>
+              <div><div style={{fontSize:13,fontWeight:600,color:'#222',marginBottom:2}}>{s.t}</div><div style={{fontSize:12,color:'#666',lineHeight:1.6}}>{s.d}</div></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* iOS 가이드 */}
+      {step==='ios' && (
+        <div style={{background:'#fff',borderRadius:16,border:'0.5px solid rgba(0,0,0,.08)',padding:'18px 16px',marginBottom:16}}>
+          <div style={{fontSize:14,fontWeight:700,color:'#7C3AED',marginBottom:14}}>🍎 iPhone 단축어 설치</div>
+
+          {/* 설치 버튼 */}
+          <a href="https://www.icloud.com/shortcuts/88a76da4e7f3479ea3fd75d1a8b9d3ee" target="_blank" rel="noopener noreferrer"
+            style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,width:'100%',padding:'14px',borderRadius:14,background:'linear-gradient(135deg,#7C3AED,#a78bfa)',color:'white',textDecoration:'none',fontSize:15,fontWeight:700,boxShadow:'0 4px 16px rgba(124,58,237,.35)',marginBottom:8,boxSizing:'border-box'}}>
+            ⚡ 단축어 한 번에 설치하기
+          </a>
+          <div style={{fontSize:11,color:'#aaa',textAlign:'center',marginBottom:18}}>"단축어 추가" 버튼 한 번만 탭하면 설치 완료!</div>
+
+          {/* 설치 후 단계 */}
+          <div style={{background:'rgba(217,119,6,.06)',borderRadius:12,padding:'14px',border:'0.5px solid rgba(217,119,6,.2)',marginBottom:14}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#D97706',marginBottom:10}}>⚠️ 설치 후 반드시 1단계 추가!</div>
+            <div style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+              <div style={{width:26,height:26,borderRadius:'50%',background:'#D97706',color:'white',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>!</div>
+              <div style={{fontSize:12,color:'#666',lineHeight:1.7}}>단축어 앱 → 설치된 단축어 <b>길게 누르기</b> → <b>세부사항</b> → <b>"공유 시트에서 사용"</b> 켜기</div>
+            </div>
+          </div>
+
+          {/* 사용법 */}
+          {[
+            {n:'3',t:'앱 홈 화면 추가',d:'Safari에서 앱 접속 → 공유 → 홈 화면에 추가 (앱이 바로 열리게 됩니다)'},
+            {n:'4',t:'사용!',d:'유튜브·인스타에서 공유 → 단축어 앱 아이콘 → 설치한 단축어 선택 → 수신함 자동 저장 ✅'},
+          ].map(s=>(
+            <div key={s.n} style={{display:'flex',gap:12,marginBottom:10,alignItems:'flex-start'}}>
+              <div style={{width:26,height:26,borderRadius:'50%',background:'#7C3AED',color:'white',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{s.n}</div>
+              <div><div style={{fontSize:13,fontWeight:600,color:'#222',marginBottom:2}}>{s.t}</div><div style={{fontSize:12,color:'#666',lineHeight:1.6}}>{s.d}</div></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 공유 시트에 안 보일 때 */}
+      <div style={{background:'#fff',borderRadius:16,border:'0.5px solid rgba(0,0,0,.08)',padding:'16px'}}>
+        <div style={{fontSize:13,fontWeight:600,color:'#555',marginBottom:8}}>💬 공유 시트에 단축어가 안 보여요?</div>
+        <div style={{fontSize:12,color:'#888',lineHeight:1.8}}>
+          공유 시트 하단 액션 목록 끝까지 스크롤<br/>
+          → <b>"더 보기"</b> 탭<br/>
+          → <b>"단축어"</b> 찾아서 켜기
         </div>
       </div>
     </div>
@@ -1002,21 +1173,48 @@ export default function MainApp({ user }) {
   const [showSettings,setShowSettings] = useState(false);
 
   const allTags = userTags.length ? userTags : [];
+  const allTagsRef = useRef(allTags);
+  useEffect(() => { allTagsRef.current = allTags; }, [allTags]);
 
-  /* 공유 수신 처리 */
+  /* 공유 수신 처리 (Android PWA Web Share Target) */
   useEffect(() => {
     if (!window.__pendingShare) return;
     const { url, title } = window.__pendingShare;
     delete window.__pendingShare;
     const t = title || url; if (!t) return;
-    addItem({ type:'inbox', title:t, url:url||'', tags:[], note:'🤖 AI 분析 중...', aiTags:[], createdAt:today() }).then(async (docRef) => {
+    addItem({ type:'inbox', title:t, url:url||'', tags:[], note:'🤖 AI 분석 중...', aiTags:[], createdAt:today() }).then(async (docRef) => {
       try {
-        const res = await fetch(AI_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:t,url:url||'',userTags:[]}) });
+        let tries = 0;
+        while (!allTagsRef.current.length && tries++ < 20) await new Promise(r=>setTimeout(r,100));
+        const res = await fetch(AI_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:t,url:url||'',userTags:allTagsRef.current}) });
         const data = await res.json();
-        const updates = { note: data.summary||'', aiTags: data.tags||[] };
+        const updates = { note: data.summary||'', aiTags: (data.tags||[]).filter(tag=>allTagsRef.current.includes(tag)) };
         if (data.fetchedTitle) updates.title = data.fetchedTitle;
         await updateItem(docRef.id, updates);
       } catch(e) { console.error(e); await updateItem(docRef.id, { note:'' }); }
+    });
+    setTab('inbox');
+  }, []); // eslint-disable-line
+
+  /* URL 파라미터 수신 처리 (iOS 단축어) */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shared = params.get('inbox');
+    if (!shared) return;
+    window.history.replaceState({}, '', window.location.pathname);
+    const decoded = decodeURIComponent(shared);
+    const isUrl = decoded.startsWith('http');
+    const t = isUrl ? decoded : (decoded.length > 60 ? decoded.slice(0,60)+'...' : decoded);
+    addItem({ type:'inbox', title:t, url:isUrl?decoded:'', tags:[], note:'🤖 AI 분석 중...', aiTags:[], createdAt:today() }).then(async (docRef) => {
+      try {
+        let tries = 0;
+        while (!allTagsRef.current.length && tries++ < 20) await new Promise(r=>setTimeout(r,100));
+        const res = await fetch(AI_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:decoded,url:isUrl?decoded:'',userTags:allTagsRef.current}) });
+        const data = await res.json();
+        const updates = { note: data.summary||'', aiTags: (data.tags||[]).filter(tag=>allTagsRef.current.includes(tag)) };
+        if (data.fetchedTitle) updates.title = data.fetchedTitle;
+        await updateItem(docRef.id, updates);
+      } catch(e) { await updateItem(docRef.id, { note:'' }); }
     });
     setTab('inbox');
   }, []); // eslint-disable-line
@@ -1100,8 +1298,9 @@ export default function MainApp({ user }) {
     { id:'area',     ico:'🏛', label:'영역' },
     { id:'resource', ico:'📚', label:'자료함' },
     { id:'archive',  ico:'🗂', label:'보관' },
+    { id:'shortcut', ico:'⚡', label:'단축어' },
   ];
-  const titles = { inbox:'📥 수신함', project:'🎯 프로젝트', area:'🏛 영역', resource:'📚 자료함', archive:'🗂 보관함' };
+  const titles = { inbox:'📥 수신함', project:'🎯 프로젝트', area:'🏛 영역', resource:'📚 자료함', archive:'🗂 보관함', shortcut:'⚡ 공유 설정' };
 
   if (loading) return (
     <div style={{height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12,background:'#f7f7f5'}}>
@@ -1128,6 +1327,7 @@ export default function MainApp({ user }) {
         {tab==='area'     && <AreaView areas={areas} resources={resources} allTags={allTags} onAddArea={()=>setShowAddArea(true)} onLinkResources={doLinkResources} onUnlink={doUnlink} onArchiveArea={doArchiveArea}/>}
         {tab==='resource' && <ResourceView items={resources} projects={projects} allTags={allTags} onLinkToProject={doLinkToProject} onDelete={deleteItem}/>}
         {tab==='archive'  && <ArchiveView items={archives} allTags={allTags}/>}
+        {tab==='shortcut' && <ShortcutView/>}
       </div>
 
       {/* FAB */}
@@ -1138,9 +1338,9 @@ export default function MainApp({ user }) {
       {/* 하단 탭바 */}
       <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'rgba(255,255,255,.95)',backdropFilter:'blur(12px)',borderTop:'0.5px solid rgba(0,0,0,.08)',display:'flex',paddingBottom:'env(safe-area-inset-bottom)',zIndex:99}}>
         {tabs.map(t => (
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2,padding:'8px 0 10px',border:'none',background:'transparent',cursor:'pointer',position:'relative'}}>
-            <span style={{fontSize:20}}>{t.ico}</span>
-            <span style={{fontSize:10,fontWeight:tab===t.id?700:400,color:tab===t.id?'#7C3AED':'#aaa'}}>{t.label}</span>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:1,padding:'7px 0 9px',border:'none',background:'transparent',cursor:'pointer',position:'relative'}}>
+            <span style={{fontSize:18}}>{t.ico}</span>
+            <span style={{fontSize:9,fontWeight:tab===t.id?700:400,color:tab===t.id?'#7C3AED':'#aaa'}}>{t.label}</span>
             {t.badge && <span style={{position:'absolute',top:6,right:'calc(50% - 14px)',background:'#EA580C',color:'white',borderRadius:10,fontSize:9,padding:'1px 5px',fontWeight:700,minWidth:16,textAlign:'center'}}>{t.badge}</span>}
             {tab===t.id && <div style={{position:'absolute',bottom:0,width:20,height:2,background:'#7C3AED',borderRadius:1}}/>}
           </button>
