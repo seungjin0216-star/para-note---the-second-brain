@@ -18,3 +18,4 @@ export const AI_ENDPOINT         = '/.netlify/functions/ai-summary';
 export const AI_WEEKLY_ENDPOINT  = '/.netlify/functions/ai-weekly';
 export const AI_RECOMMEND_ENDPOINT = '/.netlify/functions/ai-recommend';
 export const AI_REPORT_ENDPOINT  = '/.netlify/functions/ai-report';
+export const AI_IMAGE_ENDPOINT   = '/.netlify/functions/ai-image';

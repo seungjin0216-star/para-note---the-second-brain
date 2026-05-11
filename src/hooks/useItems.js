@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   collection, query, orderBy, onSnapshot,
-  addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp,
+  addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp, writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -65,7 +65,37 @@ export function useItems(uid) {
   const deleteItem = (id) =>
     deleteDoc(doc(db, 'users', uid, 'items', id));
 
-  return { items, loading, addItem, updateItem, deleteItem };
+  /**
+   * 태그 병합/삭제 배치 업데이트
+   * fromTags: 교체할 태그 목록
+   * toTag: 바꿀 태그 (null이면 삭제)
+   */
+  const batchMergeTags = async (fromTags, toTag) => {
+    const affected = items.filter(item =>
+      (item.tags || []).some(t => fromTags.includes(t))
+    );
+    if (!affected.length) return 0;
+
+    // Firestore writeBatch는 500개 제한 → 청크 분리
+    const chunks = [];
+    for (let i = 0; i < affected.length; i += 490) chunks.push(affected.slice(i, i + 490));
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      for (const item of chunk) {
+        let newTags = (item.tags || []).filter(t => !fromTags.includes(t));
+        if (toTag && !newTags.includes(toTag)) newTags = [...newTags, toTag];
+        batch.update(doc(db, 'users', uid, 'items', item.id), {
+          tags: newTags,
+          updatedAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+    }
+    return affected.length;
+  };
+
+  return { items, loading, addItem, updateItem, deleteItem, batchMergeTags };
 }
 
 /**
