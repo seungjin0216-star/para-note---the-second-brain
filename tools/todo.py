@@ -9,6 +9,7 @@
     python3 tools/todo.py add "프로젝트명" "할일 내용"
     python3 tools/todo.py del 3              3번 항목 아예 삭제 (잘못 넣었을 때만)
     python3 tools/todo.py projects           프로젝트 목록만
+    python3 tools/todo.py newproject "이름"   프로젝트 새로 만들기
 
 ⚠️ del 은 되돌릴 수 없습니다
     끝낸 일은 done 을 쓰세요. 기록이 남아야 나중에 되짚어볼 수 있습니다.
@@ -192,6 +193,29 @@ def cmd_del(no):
     print(f"🗑 삭제  [{txt(d,'title')}] {삭제['t']}")
 
 
+def cmd_newproject(title, due=""):
+    """프로젝트를 새로 만든다. 앱에서 만드는 것과 같은 모양으로 넣는다."""
+    fs = Firestore()
+    있음 = [d for d in fs.items() if txt(d, "type") == "project" and txt(d, "title") == title]
+    if 있음:
+        print(f"이미 있습니다: {title}")
+        return
+    today = time.strftime("%Y-%m-%d")
+    fields = {
+        "type":      {"stringValue": "project"},
+        "title":     {"stringValue": title},
+        "due":       {"stringValue": due},
+        "tags":      {"arrayValue": {"values": []}},
+        "linkedIds": {"arrayValue": {"values": []}},
+        "checks":    {"arrayValue": {"values": []}},
+        "createdAt": {"stringValue": today},
+    }
+    r = requests.post(f"{fs.base}/users/{MAIN_UID}/items",
+                      headers=fs.h, json={"fields": fields}, timeout=30)
+    r.raise_for_status()
+    print(f"🆕 프로젝트 만듦: {title}")
+
+
 def cmd_projects():
     fs = Firestore()
     for d in sorted([x for x in fs.items() if txt(x, "type") == "project"],
@@ -216,6 +240,8 @@ if __name__ == "__main__":
             cmd_del(int(a[1]))
         elif a[0] == "projects":
             cmd_projects()
+        elif a[0] in ("newproject", "np"):
+            cmd_newproject(a[1], a[2] if len(a) > 2 else "")
         else:
             print(__doc__)
     except IndexError:
