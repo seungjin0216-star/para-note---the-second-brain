@@ -108,16 +108,21 @@ def checks_of(d):
     return out
 
 
-def collect(fs, show_all=False):
-    """(번호, 프로젝트문서, 체크목록, 체크인덱스, 내용) 목록을 만든다"""
+def collect(fs):
+    """
+    (번호, 프로젝트문서, 체크목록, 체크인덱스, 내용) 목록을 만든다.
+
+    ⚠️ 번호는 완료 여부와 상관없이 **모든 항목에** 매긴다.
+       예전에는 list 가 미완료만 세고 done 은 전부 세어서 번호가 어긋났다.
+       "21번 완료" 라고 했는데 다른 항목이 체크되는 사고가 날 뻔했다 (2026-08-22).
+       화면에 안 보여줄 뿐, 번호 매기는 규칙은 어디서나 같아야 한다.
+    """
     projs = [d for d in fs.items() if txt(d, "type") == "project"]
     projs.sort(key=lambda d: txt(d, "title"))
     flat, n = [], 0
     for d in projs:
         ch = checks_of(d)
         for i, c in enumerate(ch):
-            if c["d"] and not show_all:
-                continue
             n += 1
             flat.append((n, d, ch, i, c))
     return projs, flat
@@ -125,13 +130,14 @@ def collect(fs, show_all=False):
 
 def cmd_list(show_all=False):
     fs = Firestore()
-    projs, flat = collect(fs, show_all)
-    if not flat:
+    projs, flat = collect(fs)
+    보여줄 = flat if show_all else [x for x in flat if not x[4]["d"]]
+    if not 보여줄:
         print("✨ 밀린 할일이 없습니다.")
         return
 
     본 = None
-    for n, d, ch, i, c in flat:
+    for n, d, ch, i, c in 보여줄:
         t = txt(d, "title")
         if t != 본:
             남은 = sum(1 for x in ch if not x["d"])
@@ -149,7 +155,7 @@ def cmd_list(show_all=False):
 
 def cmd_mark(no, done):
     fs = Firestore()
-    _, flat = collect(fs, show_all=True)
+    _, flat = collect(fs)
     hit = next((x for x in flat if x[0] == no), None)
     if not hit:
         raise SystemExit(f"❌ {no}번 항목이 없습니다. 먼저 list 로 번호를 확인하세요.")
@@ -183,7 +189,7 @@ def cmd_add(project, text):
 def cmd_del(no):
     """항목을 아예 빼버린다. 되돌릴 수 없다 — 잘못 넣은 것 치울 때만."""
     fs = Firestore()
-    _, flat = collect(fs, show_all=True)
+    _, flat = collect(fs)
     hit = next((x for x in flat if x[0] == no), None)
     if not hit:
         raise SystemExit(f"❌ {no}번 항목이 없습니다.")
