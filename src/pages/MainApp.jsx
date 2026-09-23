@@ -584,6 +584,12 @@ function ProjectView({ projects, resources, allTags, onCheck, onCheckAdd, onChec
   const [showLink,setShowLink] = useState(false);
   const [aiLoading,setAiLoading] = useState(false);
   const [ckInput,setCkInput]   = useState('');
+  // ⚠️ 2026-09-23 — 끝낸 항목은 기본으로 접어둔다.
+  //    그전에는 완료된 것도 전부 줄만 그어진 채 화면에 남아 있었다.
+  //    손익계산서는 37줄 중 34줄이 완료인데 37줄을 다 훑어야 했다.
+  //    사장님 말: 「너무 다양한 게 들어가 있어서 잘 안 쓰게 됨」
+  //    ⚠️ 지우는 게 아니다. 「완료 N건 보기」를 누르면 그대로 나온다.
+  const [완료펼침,set완료펼침] = useState(false);
   const [reportItem,setReportItem] = useState(null);
   const [showRetro,setShowRetro]   = useState(false);
   const selP = sel ? projects.find(p=>p.id===sel) : null;
@@ -660,7 +666,7 @@ function ProjectView({ projects, resources, allTags, onCheck, onCheckAdd, onChec
               <div style={{fontSize:12,fontWeight:600,color:'#555'}}>체크리스트 {p!==null && <span style={{color:'#7C3AED'}}>({p}%)</span>}</div>
               <span style={{fontSize:11,color:'#bbb'}}>{(selP.checks||[]).filter(c=>c.d).length}/{(selP.checks||[]).length} 완료</span>
             </div>
-            {(selP.checks||[]).map(ck => (
+            {(selP.checks||[]).filter(ck => 완료펼침 || !ck.d).map(ck => (
               <div key={ck.id} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderBottom:'0.5px solid #f5f5f5'}}>
                 <div onClick={()=>onCheck(selP.id,ck.id)} style={{width:22,height:22,borderRadius:'50%',flexShrink:0,border:`2px solid ${ck.d?'#0D9488':'#ddd'}`,background:ck.d?'#0D9488':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
                   {ck.d && <svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4.5l3.5 3.5 5.5-7" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -669,6 +675,27 @@ function ProjectView({ projects, resources, allTags, onCheck, onCheckAdd, onChec
                 <button onClick={()=>onCheckDelete(selP.id,ck.id)} style={{background:'none',border:'none',color:'#ddd',fontSize:16,cursor:'pointer',padding:0,lineHeight:1}}>×</button>
               </div>
             ))}
+            {(() => {
+              const 전체 = selP.checks || [];
+              const 완료 = 전체.filter(c => c.d).length;
+              const 남음 = 전체.length - 완료;
+              return (
+                <>
+                  {남음 === 0 && 전체.length > 0 && !완료펼침 && (
+                    <div style={{textAlign:'center',padding:'18px 0',color:'#bbb',fontSize:13}}>
+                      다 끝냈습니다 👍
+                    </div>
+                  )}
+                  {완료 > 0 && (
+                    <div onClick={()=>set완료펼침(v=>!v)}
+                      style={{marginTop:10,padding:'9px 0',textAlign:'center',fontSize:12.5,fontWeight:600,
+                              color:'#aaa',cursor:'pointer',userSelect:'none'}}>
+                      ✅ 끝낸 것 {완료}건 {완료펼침 ? '접기 ▴' : '보기 ▾'}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             <div style={{display:'flex',gap:8,marginTop:10}}>
               <input value={ckInput} onChange={e=>setCkInput(e.target.value)}
                 onKeyDown={e=>{if(e.key==='Enter'&&ckInput.trim()){onCheckAdd(selP.id,ckInput.trim());setCkInput('');}}}
