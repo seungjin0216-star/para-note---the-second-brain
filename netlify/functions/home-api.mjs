@@ -35,13 +35,13 @@ export default async (req) => {
     const { db } = admin();
 
     if (body.a === 'workout') {
-      const today = kst().date, key = `workout_${who}`;
+      const today = kst().date, w = body.who === 'me' || body.who === 'her' ? body.who : who, key = `workout_${w}`;
       const ref = db.doc(`${HOME}/notified/${today}`);
       const done = (await ref.get()).data() || {};
       if (done[key]) return J({ ok: true, already: true });
       await ref.set({ [key]: Date.now() }, { merge: true });
       const m = await members(db);
-      const r = await push(db, [partner(who), 'tab'], `💪 ${nameOf(m, who)} 오늘 운동 끝!`, '오늘 할 운동을 다 했어요', `workout-${who}`);
+      const r = await push(db, [partner(w), 'tab'], `💪 ${nameOf(m, body.who === 'me' || body.who === 'her' ? body.who : who)} 오늘 운동 끝!`, String(body.text || '오늘 할 운동을 다 했어요').slice(0, 120), `workout-${who}`);
       return J({ ok: true, ...r });
     }
     if (body.a === 'poke') {   // 「먹으라고 알림」 — 상대 폰으로 바로

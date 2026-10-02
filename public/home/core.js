@@ -92,7 +92,9 @@ export function routinesFor(routines, who, s) {
 /** 그날 그 사람이 다 했나 (할 게 없으면 null) */
 export function dayDone(routines, logs, who, s) {
   const need = routinesFor(routines, who, s);
-  if (!need.length) return null;
+  // 루틴 말고 「따로 한 운동」 (키: 날짜_who_x_…) — 할 루틴이 없는 날이면 그것만으로 「한 날」
+  const 따로 = Object.keys(logs).some(k => k.startsWith(`${s}_${who}_x_`));
+  if (!need.length) return 따로 ? true : null;
   return need.every(r => logs[`${s}_${who}_${r.id}`]);
 }
 /** 연속 일수 — 할 게 없는 날은 건너뜀. 오늘을 아직 안 했으면 어제부터 셉니다 */
