@@ -118,6 +118,7 @@ export function streak(routines, logs, who, today) {
    ⚠️ 밀렸다가 하면 그날부터 다시 셉니다 */
 export function choreNext(ch) {
   const ev = ch.every || { type: 'days', n: 7 };
+  if (ch.once) return ch.lastDone ? '9999-12-31' : (ch.start || ch.created || kst().date);   // 한 번만 할 일 — 하면 끝
   if (!ch.lastDone) return ch.start || ch.created || kst().date;
   if (ev.type === 'weekdays' && (ev.days || []).length) {
     for (let i = 1; i <= 7; i++) { const s = addDays(ch.lastDone, i); if (ev.days.includes(wdOf(s))) return s; }
@@ -133,14 +134,17 @@ export function everyText(ev) {
   return n === 1 ? '매일' : `${n}일마다`;
 }
 
-/* ── 약 ──────────────────────────────────────────────────
-   med.times = ['08:00','22:30'] · med.who = 'me' | 'her'
-   기록 키  날짜_약id_시각   */
-export function medKey(s, medId, t) { return `${s}_${medId}_${t}`; }
-/** 그날 그 사람이 먹을 것 [{med, time, key}] — 시각 순 */
-export function medsFor(meds, who, s) {
-  const out = [];
-  meds.filter(m => !m.off && m.who === who && (!m.start || m.start <= s)).forEach(m =>
-    (m.times || []).forEach(t => out.push({ med: m, time: t, key: medKey(s, m.id, t) })));
-  return out.sort((a, b) => a.time < b.time ? -1 : 1);
+/* ── 약 — 「세트」 (사장님 26-10-02) ───────────────────────
+   「아침·점심·저녁 · 공통으로 먹는 세트와 개별 세트 · 꼬박꼬박 다 먹기 위해」
+   set = { name, who: 'we'|'me'|'her', slot: '아침'|'점심'|'저녁'|'자기 전', time, pills: [] }
+   기록 키  날짜_세트id_사람   (같이 세트는 두 사람이 따로 체크) */
+export const SLOTS = [['아침', '08:00'], ['점심', '12:30'], ['저녁', '19:00'], ['자기 전', '22:30']];
+export const slotTime = (slot) => (SLOTS.find(x => x[0] === slot) || ['', '08:00'])[1];
+export function slotOf(t) { const m = hm2min(t); return m < 11 * 60 ? '아침' : m < 16 * 60 ? '점심' : m < 21 * 60 ? '저녁' : '자기 전'; }
+export function medKey(s, setId, who) { return `${s}_${setId}_${who}`; }
+/** 그날 그 사람이 먹을 세트 [{set, who, time, slot, key}] — 시간대 순 */
+export function setsFor(sets, who, s) {
+  return sets.filter(x => !x.off && x.slot && (x.who === 'we' || x.who === who) && (!x.start || x.start <= s))
+    .map(x => ({ set: x, who, slot: x.slot, time: x.time || slotTime(x.slot), key: medKey(s, x.id, who) }))
+    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : (a.set.who === 'we' ? -1 : 1));
 }

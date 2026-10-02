@@ -8,7 +8,7 @@
    ⚠️ 서버는 UTC 입니다. 날짜·시각은 전부 core.js 의 kst() 로
    ═══════════════════════════════════════════════════════════ */
 import { admin, HOME, readCol, members, push, partner, nameOf } from './_home.mjs';
-import { kst, medsFor, hm2min, eventsOn } from '../../public/home/core.js';
+import { kst, setsFor, hm2min, eventsOn } from '../../public/home/core.js';
 
 export const config = { schedule: '*/5 * * * *' };
 
@@ -27,15 +27,15 @@ export default async () => {
 
   /* 💊 약 */
   for (const who of ['me', 'her']) {
-    for (const x of medsFor(Object.values(meds), who, today)) {
+    for (const x of setsFor(Object.values(meds), who, today)) {   // 세트 단위 (26-10-02)
       const t = hm2min(x.time);
       if (now.min < t || (logs[x.key] && logs[x.key].taken)) continue;
       // 오늘 그 시각 뒤에 새로 넣은 약이면 오늘 그 시각은 건너뜀
-      if (x.med.created && x.med.created > Date.parse(`${today}T${x.time}:00+09:00`)) continue;
+      if (x.set.created && x.set.created > Date.parse(`${today}T${x.time}:00+09:00`)) continue;
       if (now.min < t + 60) {
-        jobs.push(once(`due_${x.key}`, () => push(db, [who, 'tab'], `💊 약 먹을 시간`, `${nameOf(m, who)} · ${x.med.name} (${x.time})`, `med-${x.key}`)));
+        jobs.push(once(`due_${x.key}`, () => push(db, [who, 'tab'], `💊 약 먹을 시간`, `${nameOf(m, who)} · ${x.slot} ${x.set.name} (${(x.set.pills || []).join('·')})`, `med-${x.key}`)));
       } else {
-        jobs.push(once(`late_${x.key}`, () => push(db, [who, partner(who), 'tab'], `⏰ 아직 약을 안 먹었어요`, `${nameOf(m, who)} · ${x.med.name} — ${x.time}부터 1시간 지났어요`, `med-${x.key}`)));
+        jobs.push(once(`late_${x.key}`, () => push(db, [who, partner(who), 'tab'], `⏰ 아직 약을 안 먹었어요`, `${nameOf(m, who)} · ${x.slot} ${x.set.name} — ${x.time}부터 1시간 지났어요`, `med-${x.key}`)));
       }
     }
   }

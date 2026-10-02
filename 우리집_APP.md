@@ -43,6 +43,16 @@ Firebase 웹 설정은 코드에 안 적음 (규칙 ⑥) → home-api?a=config �
 ### 사장님 말 (판단 근거)
 
 ```
+26-10-02 약     「아침·점심·저녁으로 나눠져 있어. 공통으로 먹어야 하는 약 세트가 있고 개별 세트가 있어.
+                 만드는 이유는 약을 항상 꼬박꼬박 다 먹기 위함 … 먹는 사람을 나눈 이유는 체크해야 하는 사람이 따로라서」
+                → 알약 하나씩이 아니라 「세트」 한 번 체크. 세트 안의 약 이름은 작게 보여 빠뜨리지 않게
+26-10-02 집안일  「한 번 정하면 이걸 해야 한다는 걸 알려주는 기능과, 이걸 했다는 체크가 중점 · 가끔 비정기 업무」
+                → 밀림/오늘/이번 주/나중 네 칸(달력에 가까움)을 버리고 「해야 할 것 · 오늘 한 것 · 정기」 로
+26-10-02 냉장고  「이름만 · 넣은 날 자동 · 대강 7일 · 가끔 다이얼로 7일 안 · 냉동은 기한 필요 없음」
+26-10-02 운동    「루틴도 있지만 갑자기 운동했을 경우 … 넣어서 했다는 것을 보여줘야 해」
+```
+
+```
 「갤럭시 탭에서 주로 확인 … 가로모드로 많이 볼 것」
 「약 … 왼쪽 오른쪽은 남녀가 나눠져서 각각 체크」
 「안 먹는다? 각자 웹앱 공유니까 알림을 울려서 먹게끔 … 여기서도(탭) 알림이 있어야 해」
@@ -66,11 +76,11 @@ Firebase 웹 설정은 코드에 안 적음 (규칙 ⑥) → home-api?a=config �
 
 | 화면 | 핵심 |
 |---|---|
-| 💊 약 | 왼쪽 나 · 오른쪽 여자친구 · 시각마다 체크 · 넣기/고치기/빼기 · 폰에서 상대가 안 먹었으면 「🔔 알려주기」 |
+| 💊 약 | **세트** 단위 (26-10-02) · 아침/점심/저녁/자기 전 줄 × 나 / 여자친구 칸 · 「같이」 세트는 양쪽에 나오고 각자 체크 · 먹으면 줄 긋고 시각 · 노랑 지금 · 빨강 1시간 지남 · 폰에서 상대가 안 먹었으면 🔔 |
 | 📅 일정 | 주/월 · 반복(한 번·매주 요일·매월·매년·N일마다) · 「이날만 빼기」(skip) · 「앞으로 전부 빼기」(until) |
 | 🧊 냉장고 | 냉장/냉동 · 이름만 치면 넣은 날 자동 · 냉장 기본 7일 (1~7일 다이얼) · 냉동은 기한 없이 「N일째」 · 다 먹음/버림 → 기록 · 되돌리기 |
 | 💪 운동 | 루틴(나·여자친구·둘 다) · **따로 한 운동**(루틴 말고 갑자기 한 것 · 넣으면 그날 「한 날」 + 상대에게 알림) · 연속 일수 · 이달 달력 |
-| 🧹 집안일 | 밀림/오늘/이번 주/나중 · **한 날부터** 다음 날 계산 |
+| 🧹 집안일 | **해야 할 것 · 오늘 한 것 · 정기 집안일(주기 막대)** 세 칸 (26-10-02) · 「한 번만 할 일」은 바로 쳐서 넣고 하면 다음 날 사라짐 · **한 날부터** 다음 날 계산 |
 
 ---
 
@@ -99,13 +109,15 @@ home-cron   5분마다 (Netlify 예약 함수 · 게시된 배포에서만 돔)
 
 ```
 (문서) homes/main      members.me / members.her = {name, email}   첫 로그인 때 「이 계정은 누구?」로 채움
-meds/{id}         name who times[] memo created start off
-medLogs/{날짜_약id_시각}   date medId time who taken at by
+meds/{id}         세트: name who(we|me|her) slot(아침|점심|저녁|자기 전) time pills[] created start off
+                  ⚠️ 옛 약(하나씩 · times[])은 첫 화면에서 (사람, 시간대)별 세트 mig_<who>_<slot> 로 옮기고 옛 것은 off·migrated
+medLogs/{날짜_세트id_사람}   date setId who taken at by        ← 26-10-02 전 키(날짜_약id_시각)는 안 씀
 events/{id}       title who(me|her|we) date time repeat{type,days,n} until skip[] off
 food/{id}         name place kind added expires qty status(있음|다먹음|버림) outDay outBy
 routines/{id}     name who(me|her|we) sched{type,days,n,start} off
 workLogs/{날짜_who_루틴id}   date who rid done at by
-chores/{id}       name who(me|her|any) every{type:days,n | weekdays,days} start lastDone lastBy prevDone off
+chores/{id}       name who(me|her|any) every{type:days,n | weekdays,days} start lastDone lastBy prevDone prevBy once off
+                  once:true = 한 번만 할 일 (하면 끝 · 한 날이 지나면 목록에서 숨김)
 choreLogs/{id}    choreId date by at          (기록만 · 화면은 안 읽음)
 subs/{endpoint해시}  who(me|her|tab) sub ua off
 notified/{날짜}    알림 보낸 키들

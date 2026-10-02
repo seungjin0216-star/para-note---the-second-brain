@@ -128,6 +128,26 @@ body.tabL main.fit{overflow:hidden}
 .medcol.me .slot.done{background:var(--me-bg)}.medcol.her .slot.done{background:var(--her-bg)}
 .medlist .it{cursor:pointer}
 
+.prog{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:13px;padding:7px 12px;font-weight:700;font-size:14px}
+.prog i{font-style:normal;display:inline-flex;gap:3px}.prog i span{width:22px;height:8px;border-radius:4px;background:var(--line)}
+.prog.me i span.y{background:var(--me)}.prog.her i span.y{background:var(--her)}
+body.phone .prog{display:none}
+.mgrid{display:grid;grid-template-columns:100px 1fr 1fr;gap:10px}
+.mh{font-size:19px;font-weight:800;padding:2px 4px}.mh.me{color:var(--me)}.mh.her{color:var(--her)}
+.slotlab{background:var(--surface);border-radius:16px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-weight:800;font-size:18px;gap:2px;min-height:70px}
+.slotlab small{font-size:12.5px;color:var(--muted);font-weight:600}
+.slotlab.now{background:var(--ink);color:var(--paper)}.slotlab.now small{color:inherit;opacity:.7}
+.cell{display:flex;flex-direction:column;gap:8px}
+.set{background:var(--surface);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;border:2.5px solid transparent}
+.set .m{flex:1;min-width:0;cursor:pointer}.set .m b{font-size:16.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.set .m small{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.tag{font-size:11px;font-weight:800;border-radius:6px;padding:1px 6px}
+.tag.we{background:var(--we-bg);color:var(--we)}.tag.me{background:var(--me-bg);color:var(--me)}.tag.her{background:var(--her-bg);color:var(--her)}
+.set.done .m b,.set.done .m small{text-decoration:line-through;color:var(--off)}
+.set.done.me{background:var(--me-bg)}.set.done.her{background:var(--her-bg)}
+.set.late{border-color:var(--bad)}.set.late .m small{color:var(--bad)}.set.due{border-color:#e0a100}
+.slothd{font-size:13px;font-weight:800;color:var(--muted);margin:10px 2px 6px}.slothd.now{color:var(--ink)}
+.slothd+.set,.set+.set{margin-top:6px}
 /* ── 일정 ── */
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-height:360px}
 .wday{background:var(--surface);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:6px;cursor:pointer;min-width:0}
@@ -161,6 +181,10 @@ body.phone .mc{min-height:46px}
 .gcal i.td{outline:2.5px solid var(--ink)}
 
 /* ── 집안일 ── */
+.cgrid{display:grid;grid-template-columns:1.2fr .9fr 1.1fr;gap:14px;align-items:start}
+.gauge{height:7px;border-radius:4px;background:var(--soft);overflow:hidden;margin-top:5px}.gauge i{display:block;height:100%;border-radius:4px}
+.once{font-size:11px;font-weight:800;background:var(--warn-bg);color:var(--warn);border-radius:6px;padding:1px 6px}
+.quick{display:flex;gap:8px;margin-top:12px}.quick .field{flex:1;padding:9px 11px;font-size:15px}
 .chores{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
 .ccol{background:var(--soft);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .ccol.bad{background:var(--bad-bg)}
@@ -249,10 +273,11 @@ function seedDemo() {
   const t = today, A = n => C.addDays(t, n), now = Date.now() - 864e5;
   D.members = { me: { name: '나', email: 'demo-me' }, her: { name: '여자친구', email: 'demo-her' } };
   const put = (col, o) => { const id = o.id || uid(); D[col][id] = { ...o, id }; return id; };
-  put('meds', { name: '비타민D', who: 'me', times: ['08:00'], created: now });
-  put('meds', { name: '오메가3', who: 'me', times: ['08:00', '19:00'], created: now });
-  put('meds', { name: '유산균', who: 'her', times: ['08:30'], created: now });
-  put('meds', { name: '철분제', who: 'her', times: ['22:30'], created: now });
+  put('meds', { name: '아침 공통 세트', who: 'we', slot: '아침', time: '08:00', pills: ['비타민D', '오메가3', '유산균'], created: now });
+  put('meds', { name: '혈압약', who: 'me', slot: '아침', time: '08:00', pills: ['노바스크 5mg'], created: now });
+  put('meds', { name: '철분 세트', who: 'her', slot: '아침', time: '08:00', pills: ['철분제', '비타민C'], created: now });
+  put('meds', { name: '점심 공통 세트', who: 'we', slot: '점심', time: '12:30', pills: ['마그네슘', '밀크씨슬'], created: now });
+  put('meds', { name: '저녁 공통 세트', who: 'we', slot: '저녁', time: '19:00', pills: ['오메가3', '루테인'], created: now });
   put('events', { title: '두리 병원', who: 'we', date: t, time: '19:00', repeat: { type: 'none' } });
   put('events', { title: '친구 약속', who: 'her', date: t, time: '20:00', repeat: { type: 'none' } });
   put('events', { title: '헬스 PT', who: 'me', date: A(1), time: '07:30', repeat: { type: 'weekly', days: [C.wdOf(A(1))] } });
@@ -313,6 +338,22 @@ function startLive() {
     putRoot: data => F.setDoc(F.doc(db, 'homes', 'main'), data, { merge: true }),
   };
 }
+/* 🔁 옛 약(하나씩 · times[]) → 세트로 옮기기 (26-10-02 · 한 번만)
+   (사람, 시간대) 마다 한 세트로 묶습니다. 세트 id 가 정해져 있어 두 기기가 같이 돌려도 같은 결과
+   ⚠️ 옛 것은 지우지 않고 off:true · migrated:true (CLAUDE.md ④) */
+let migrated = false;
+async function 옛약옮기기() {
+  if (migrated || !DB) return;
+  const old = Object.values(D.meds).filter(m => !m.off && !m.slot && (m.times || []).length);
+  if (!old.length) return; migrated = true;
+  const g = {};
+  old.forEach(m => m.times.forEach(t => { const sl = C.slotOf(t), id = `mig_${m.who}_${sl}`;
+    g[id] = g[id] || { name: `${sl} 세트`, who: m.who, slot: sl, time: t, pills: [], created: m.created || Date.now(), start: m.start || today };
+    if (!g[id].pills.includes(m.name)) g[id].pills.push(m.name); if (t < g[id].time) g[id].time = t; }));
+  for (const [id, v] of Object.entries(g)) await DB.put('meds', id, v);
+  for (const m of old) await DB.put('meds', m.id, { off: true, migrated: true });
+  toast(`💊 약 ${old.length}개를 세트 ${Object.keys(g).length}개로 옮겼습니다 — 이름은 눌러서 고치세요`);
+}
 let rq = 0; function schedule() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; render(); }); }
 
 /* ═════════════ 로그인 화면들 ═════════════ */
@@ -350,9 +391,9 @@ tabLayout.addEventListener('change', () => { layout(); render(); });
 function badges() {
   const b = {};
   const 지금 = C.kst().min;
-  const 안먹음 = w => C.medsFor(Object.values(D.meds), w, today).some(x => !taken(x.key) && C.hm2min(x.time) + 60 <= 지금);
+  const 안먹음 = w => mySets(w).some(지남);
   b.med = isTab() ? (안먹음('me') || 안먹음('her')) : (ME && 안먹음(ME));
-  b.chore = Object.values(D.chores).some(c => !c.off && C.choreNext(c) < today);
+  b.chore = choresSorted().some(c => c.next < today && c.lastDone !== today);
   b.fridge = Object.values(D.food).some(f => f.status === '있음' && f.expires && C.diffDays(f.expires, today) <= 0);
   return b;
 }
@@ -368,7 +409,7 @@ let lastHtml = '';
 function render() {
   if (!DB) return;
   today = C.kst().date;
-  shell(); layout();
+  shell(); layout(); 옛약옮기기();
   $('#rail').innerHTML = navHtml() + `<div class="sp"></div><button data-go="set" class="${cur === 'set' ? 'on' : ''}"><b>⚙️</b>설정</button>`;
   $('#btm').innerHTML = navHtml();
   const R = { home: rHome, med: rMed, cal: rCal, fridge: rFridge, gym: rGym, chore: rChore, set: rSet }[cur] || rHome;
@@ -383,12 +424,16 @@ const topBar = (title, sub, acts = '') => `<div><h1>${title}</h1>${sub ? `<div c
 
 /* ═════════════ 공통 계산 ═════════════ */
 const taken = key => D.medLogs[key] && D.medLogs[key].taken;
+const sets = () => Object.values(D.meds).filter(m => !m.off && m.slot);
+const mySets = (w, s = today) => C.setsFor(sets(), w, s);
+const 지남 = x => !taken(x.key) && C.hm2min(x.time) + 60 <= C.kst().min;
 const doneMap = () => { const o = {}; Object.entries(D.workLogs).forEach(([k, v]) => { if (v.done) o[k] = 1; }); return o; };
 const routines = () => Object.values(D.routines).filter(r => !r.off);
 const foods = () => Object.values(D.food).filter(f => f.status === '있음').sort((a, b) => (a.expires || '9999') + (a.added || '') < (b.expires || '9999') + (b.added || '') ? -1 : 1);
-const choresSorted = () => Object.values(D.chores).filter(c => !c.off).map(c => ({ ...c, next: C.choreNext(c) })).sort((a, b) => a.next < b.next ? -1 : 1);
+const choresSorted = () => Object.values(D.chores).filter(c => !c.off && !(c.once && c.lastDone && c.lastDone < today)).map(c => ({ ...c, next: C.choreNext(c) })).sort((a, b) => a.next < b.next ? -1 : 1);
 const whoCls = w => w === 'me' ? 'me' : w === 'her' ? 'her' : w === 'we' ? 'we' : 'any';
 function choreSub(c) {
+  if (c.once) return `한 번만 · ${이름(c.who)}`;
   const n = C.diffDays(c.next, today);
   const when = n < 0 ? `${-n}일 밀림` : n === 0 ? '오늘' : n === 1 ? '내일' : C.label(c.next);
   return `${when} · ${C.everyText(c.every)} · ${이름(c.who)}`;
@@ -396,11 +441,15 @@ function choreSub(c) {
 /* 체크 버튼 — 탭이면 사람마다, 폰이면 내 것만 */
 function medBtn(x, who) {
   const on = taken(x.key), can = isTab() || who === ME;
-  return `<button class="chk ${who} ${on ? 'on' : ''}" data-act="med" data-key="${x.key}" data-mid="${x.med.id}" data-t="${x.time}" data-who="${who}" ${can ? '' : 'disabled'} aria-label="${이름(who)} ${esc(x.med.name)} ${x.time}">${on ? '✓' : ''}</button>`;
+  return `<button class="chk ${who} ${on ? 'on' : ''}" data-act="med" data-key="${x.key}" data-sid="${x.set.id}" data-who="${who}" ${can ? '' : 'disabled'} aria-label="${이름(who)} ${esc(x.set.name)}">${on ? '✓' : ''}</button>`;
 }
-/* 「따로 한 운동」 — 루틴 말고 갑자기 한 것 (사장님 26-10-02) · 키 날짜_who_x_id */
-const adhocToday = who => Object.entries(D.workLogs).filter(([k, v]) => v.done && v.adhoc && v.date === today && (!who || v.who === who)).map(([k, v]) => ({ ...v, key: k }));
-const adhocRow = x => `<div class="it"><span class="m"><b>🏃 ${esc(x.name)}</b><small>따로 한 운동 · ${이름(x.who)}${x.memo ? ' · ' + esc(x.memo) : ''}</small></span><button class="chk ${x.who} on" data-act="adhocOff" data-key="${x.key}" ${isTab() || x.who === ME ? '' : 'disabled'} aria-label="빼기">✓</button></div>`;
+/* 세트 한 장 — 먹으면 줄 긋고 「08:12 먹음」 · 노랑 = 지금 먹을 때 · 빨강 = 1시간 지남 */
+function setCard(x, w, small) {
+  const on = taken(x.key), t = C.hm2min(x.time), now = C.kst().min, late = !on && now >= t + 60, due = !on && !late && now >= t;
+  const tag = x.set.who === 'we' ? '<span class="tag we">같이</span>' : `<span class="tag ${x.set.who}">${이름(x.set.who)}만</span>`;
+  const log = D.medLogs[x.key];
+  return `<div class="set ${w} ${on ? 'done' : ''} ${late ? 'late' : ''} ${due ? 'due' : ''}"><div class="m" data-act="medEdit" data-id="${x.set.id}"><b>${esc(x.set.name)} ${small ? '' : tag}</b><small>${small ? x.slot + ' · ' : ''}${(x.set.pills || []).map(esc).join(' · ')}${on ? ` — ${new Date(log.at).toTimeString().slice(0, 5)} 먹음` : late ? ' — 1시간 지남' : due ? ' — 지금' : ''}</small></div>${medBtn(x, w)}</div>`;
+}
 function workBtns(r) {
   const ws = r.who === 'we' ? ['me', 'her'] : [r.who];
   return ws.map(w => { const k = `${today}_${w}_${r.id}`, on = D.workLogs[k] && D.workLogs[k].done, can = isTab() || w === ME;
@@ -415,7 +464,7 @@ function evLine(e, past) {
 }
 function choreLine(c) {
   const done = c.lastDone === today, cls = c.who === 'her' ? 'her' : c.who === 'me' ? 'me' : 'any';
-  return `<div class="it ${done ? 'done' : ''}"><span class="m ${!done && c.next < today ? 'late' : ''}"><b>${esc(c.name)}</b><small>${done ? `✓ 오늘 했음 · ${이름(c.lastBy || c.who)} · 다음 ${C.label(c.next)}` : choreSub(c)}</small></span><button class="chk ${cls} ${done ? 'on' : ''}" data-act="chore" data-id="${c.id}" aria-label="${esc(c.name)} ${done ? '되돌리기' : '했음'}">${done ? '✓' : ''}</button></div>`;
+  return `<div class="it ${done ? 'done' : ''}"><span class="m ${!done && c.next < today ? 'late' : ''}"><b>${esc(c.name)}${c.once ? ' <span class="once">한 번만</span>' : ''}</b><small>${done ? `✓ 오늘 했음 · ${이름(c.lastBy || c.who)}${c.once ? '' : ` · 다음 ${C.label(c.next)}`}` : choreSub(c)}</small></span><button class="chk ${cls} ${done ? 'on' : ''}" data-act="chore" data-id="${c.id}" aria-label="${esc(c.name)} ${done ? '되돌리기' : '했음'}">${done ? '✓' : ''}</button></div>`;
 }
 function homeChores(max) {
   // ⚠️ 26-10-02 「체크를 해도 멍하니 떠 있음」 — 체크하면 다음 날로 넘어가 목록에서 그냥 사라졌습니다
@@ -436,9 +485,8 @@ function rHome() {
   const ch = homeChores(4), fd = homeFood(4), rs = routines();
   const todayR = rs.filter(r => C.routineOn(r, today));
   const dm = doneMap();
-  const medMini = w => { const xs = C.medsFor(Object.values(D.meds), w, today);
-    return `<div><div class="who" style="color:var(--${w})">${이름(w)}</div>${xs.slice(0, 3).map(x => { const late = !taken(x.key) && C.hm2min(x.time) + 60 <= now.min;
-      return `<div class="it" style="min-height:46px;padding:6px 0"><span class="m ${late ? 'late' : ''}"><b>${esc(x.med.name)}</b><small>${x.time}${late ? ' · 안 먹음' : ''}</small></span>${medBtn(x, w)}</div>`; }).join('') || '<div class="empty">없음</div>'}${xs.length > 3 ? `<div class="more">+${xs.length - 3}</div>` : ''}</div>`; };
+  const medMini = w => { const xs = mySets(w), left = xs.filter(x => !taken(x.key));
+    return `<div><div class="who" style="color:var(--${w})">${이름(w)} <span style="color:var(--muted);font-weight:600">${xs.length - left.length}/${xs.length}</span></div>${(left.length ? left : xs).slice(0, 3).map(x => `<div class="it" style="min-height:46px;padding:6px 0"><span class="m ${지남(x) ? 'late' : ''}"><b>${esc(x.set.name)}</b><small>${x.slot}${지남(x) ? ' · 안 먹음' : ''}</small></span>${medBtn(x, w)}</div>`).join('') || '<div class="empty">없음</div>'}${!left.length && xs.length ? '<div class="more">✓ 오늘 다 먹음</div>' : ''}</div>`; };
   const body = `<div class="home">
     <div class="card clock"><div style="min-height:0;overflow:hidden">
       <div class="tm num">${now.time}</div><div class="dt">${긴날짜(today)}</div>
@@ -459,15 +507,15 @@ function rHome() {
 function rHomePhone(오늘일정, 내일일정) {
   const now = C.kst(), who = isTab() ? null : ME;
   const ws = who ? [who] : ['me', 'her'];
-  const meds = ws.flatMap(w => C.medsFor(Object.values(D.meds), w, today).map(x => ({ ...x, w })));
+  const meds = ws.flatMap(w => mySets(w).map(x => ({ ...x, w })));
   const ch = homeChores(6), fd = homeFood(5);
   const myR = routines().filter(r => C.routineOn(r, today) && (!who || r.who === who || r.who === 'we'));
   const pw = who && (who === 'me' ? 'her' : 'me');
-  const 상대안먹음 = pw ? C.medsFor(Object.values(D.meds), pw, today).filter(x => !taken(x.key) && C.hm2min(x.time) + 60 <= now.min) : [];
+  const 상대안먹음 = pw ? mySets(pw).filter(지남) : [];
   const body = `<div class="stack">
-    ${상대안먹음.length ? `<div class="banner"><span>⏰ ${이름(pw)} — ${상대안먹음.map(x => `${x.med.name} ${x.time}`).join(', ')} 아직 안 먹음</span><button class="btn sm" data-act="poke" data-who="${pw}">🔔 알려주기</button></div>` : ''}
+    ${상대안먹음.length ? `<div class="banner"><span>⏰ ${이름(pw)} — ${상대안먹음.map(x => `${x.slot} ${x.set.name}`).join(', ')} 아직 안 먹음</span><button class="btn sm" data-act="poke" data-who="${pw}">🔔 알려주기</button></div>` : ''}
     <div class="card"><h3>💊 ${who ? '내 약' : '오늘 약'} <button class="go" data-go="med">전체 ›</button></h3>
-      ${meds.map(x => { const late = !taken(x.key) && C.hm2min(x.time) + 60 <= now.min; return `<div class="it"><span class="m ${late ? 'late' : ''}"><b>${esc(x.med.name)}</b><small>${x.time}${who ? '' : ' · ' + 이름(x.w)}${late ? ' · 1시간 지남' : ''}</small></span>${medBtn(x, x.w)}</div>`; }).join('') || '<div class="empty">오늘 먹을 약 없음</div>'}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${meds.map(x => setCard(x, x.w, true)).join('') || '<div class="empty">오늘 먹을 약 없음</div>'}</div></div>
     <div class="card"><h3>🧹 오늘 집안일 <button class="go" data-go="chore">전체 ›</button></h3>${ch.rows}${ch.more ? `<div class="more">+${ch.more}개 더</div>` : ''}</div>
     <div class="card"><h3>💪 ${who ? '내 운동' : '오늘 운동'} <button class="go" data-go="gym">›</button></h3>${myR.map(r => `<div class="it"><span class="m"><b>${esc(r.name)}</b><small>${이름(r.who)}</small></span>${workBtns(r)}</div>`).join('')}${adhocToday(who).map(adhocRow).join('')}${!myR.length && !adhocToday(who).length ? '<div class="empty">오늘 운동 없음</div>' : ''}
       <button class="btn sec sm" data-act="adhocNew" style="margin-top:8px;align-self:flex-start">＋ 따로 한 운동</button></div>
@@ -482,21 +530,30 @@ function rHomePhone(오늘일정, 내일일정) {
 
 /* ═════════════ 💊 약 ═════════════ */
 function rMed() {
-  const now = C.kst().min;
-  const col = w => { const xs = C.medsFor(Object.values(D.meds), w, today);
-    const done = xs.filter(x => taken(x.key)).length;
-    return `<div class="medcol ${w}"><div class="hd"><span>${이름(w)}</span><span class="num" style="font-size:15px;color:var(--muted)">${done}/${xs.length}</span></div>
-      ${xs.map(x => { const on = taken(x.key), t = C.hm2min(x.time), st = on ? 'done' : now >= t + 60 ? 'late' : now >= t ? 'due' : '';
-        const log = D.medLogs[x.key];
-        return `<div class="slot ${st}"><span class="t num">${x.time}</span><span class="m">${esc(x.med.name)}<small>${on ? `${new Date(log.at).toTimeString().slice(0, 5)} 먹음` : st === 'late' ? '⏰ 1시간 지남' : st === 'due' ? '지금 먹을 시간' : ''}</small></span>${medBtn(x, w)}</div>`; }).join('') || '<div class="empty">오늘 먹을 약 없음</div>'}
-      ${!isTab() && w !== ME && xs.some(x => !taken(x.key) && now >= C.hm2min(x.time)) ? `<button class="btn sec sm" data-act="poke" data-who="${w}" style="width:100%">🔔 ${이름(w)}에게 먹으라고 알림</button>` : ''}
-      </div>`; };
-  const list = Object.values(D.meds).filter(m => !m.off).sort((a, b) => a.who < b.who ? -1 : a.name < b.name ? -1 : 1);
-  const body = `<div class="medcols">${col('me')}${col('her')}</div>
-    <div class="card medlist" style="margin-top:16px"><h3>약 목록 <small>누르면 고치거나 뺄 수 있습니다</small></h3>
-      ${list.map(m => `<div class="it" data-act="medEdit" data-id="${m.id}"><span class="dot c-${m.who}"></span><span class="m"><b>${esc(m.name)}</b><small>${이름(m.who)} · ${(m.times || []).join(' · ')}${m.memo ? ' · ' + esc(m.memo) : ''}</small></span><span style="color:var(--muted)">›</span></div>`).join('') || '<div class="empty">아직 약이 없습니다. 「＋ 약」으로 넣어 주세요</div>'}</div>
-    <p style="color:var(--muted);font-size:13px;margin-top:10px">🔔 시각이 되면 먹을 사람에게, 1시간이 지나도 체크가 없으면 두 사람 모두와 거실 탭에 알림이 갑니다.</p>`;
-  return { top: topBar('💊 약', `${C.label(today)} · 왼쪽 ${이름('me')} · 오른쪽 ${이름('her')}`, `<button class="btn" data-act="medNew">＋ 약</button>`), body };
+  const used = C.SLOTS.filter(([sl]) => sets().some(x => x.slot === sl));
+  const nowSlot = C.slotOf(C.kst().time);
+  const prog = w => { const xs = mySets(w);
+    return `<div class="prog ${w}">${이름(w)} <i>${used.map(([sl]) => { const ys = xs.filter(x => x.slot === sl); return `<span class="${ys.length && ys.every(x => taken(x.key)) ? 'y' : ''}" title="${sl}"></span>`; }).join('')}</i><b class="num">${xs.filter(x => taken(x.key)).length}/${xs.length}</b></div>`; };
+  const tabL = document.body.classList.contains('tabL');
+  let body;
+  if (tabL || isTab()) {
+    // 탭: 시간대 줄 × 나 | 여자친구 칸
+    body = `<div class="mgrid"><div></div><div class="mh me">● ${이름('me')}</div><div class="mh her">● ${이름('her')}</div>
+      ${used.map(([sl, t]) => `<div class="slotlab ${sl === nowSlot ? 'now' : ''}">${sl}<small>${t}${sl === nowSlot ? ' · 지금' : ''}</small></div>
+        ${['me', 'her'].map(w => `<div class="cell">${mySets(w).filter(x => x.slot === sl).map(x => setCard(x, w)).join('') || '<div class="empty">없음</div>'}</div>`).join('')}`).join('')}</div>
+      ${!used.length ? '<div class="empty">아직 세트가 없습니다. 「＋ 세트」로 만들어 주세요 — 예: 아침 공통 세트 (비타민D·오메가3·유산균)</div>' : ''}`;
+  } else {
+    // 폰: 내 세트만 · 위에 상대 요약
+    const pw = ME === 'me' ? 'her' : 'me';
+    const 요약 = used.map(([sl]) => { const ys = mySets(pw).filter(x => x.slot === sl); if (!ys.length) return ''; const all = ys.every(x => taken(x.key)), late = ys.some(지남); return `${sl} ${all ? '✓' : late ? '<b style="color:var(--bad)">안 먹음</b>' : '–'}`; }).filter(Boolean).join(' · ');
+    body = `<div class="card" style="flex-direction:row;justify-content:space-between;align-items:center;padding:10px 14px;margin-bottom:8px"><b style="color:var(--${pw})">${이름(pw)}</b><span style="font-size:14px">${요약 || '세트 없음'}</span>${mySets(pw).some(지남) ? `<button class="btn sm" data-act="poke" data-who="${pw}">🔔</button>` : ''}</div>
+      ${used.map(([sl, t]) => { const ys = mySets(ME).filter(x => x.slot === sl); return ys.length ? `<div class="slothd ${sl === nowSlot ? 'now' : ''}">${sl} ${t}${sl === nowSlot ? ' · 지금' : ''}</div>${ys.map(x => setCard(x, ME)).join('')}` : ''; }).join('') || '<div class="empty">내 세트가 없습니다</div>'}`;
+  }
+  const list = sets().sort((a, b) => C.SLOTS.findIndex(x => x[0] === a.slot) - C.SLOTS.findIndex(x => x[0] === b.slot));
+  body += `<div class="card" style="margin-top:16px"><h3>세트 목록 <small>누르면 고치거나 뺄 수 있습니다</small></h3>
+      ${list.map(m => `<div class="it" data-act="medEdit" data-id="${m.id}" style="cursor:pointer"><span class="dot c-${whoCls(m.who)}"></span><span class="m"><b>${esc(m.name)}</b><small>${m.slot} ${m.time || C.slotTime(m.slot)} · ${이름(m.who)} · ${(m.pills || []).map(esc).join(' · ')}</small></span><span style="color:var(--muted)">›</span></div>`).join('') || '<div class="empty">아직 없음</div>'}</div>
+    <p style="color:var(--muted);font-size:13px;margin-top:10px">🔔 세트 시각이 되면 먹을 사람에게, 1시간이 지나도 체크가 없으면 두 사람 모두와 거실 탭에 알림이 갑니다.</p>`;
+  return { top: topBar('💊 약', `${C.label(today)} · 지금은 ${nowSlot}`, `${prog('me')}${prog('her')}<button class="btn" data-act="medNew">＋ 세트</button>`), body };
 }
 
 /* ═════════════ 📅 일정 ═════════════ */
@@ -575,15 +632,33 @@ function rGym() {
 function schedText(sc) { sc = sc || {}; return sc.type === 'days' ? (sc.days || []).map(d => C.DAY[d]).join('·') : sc.type === 'everyN' ? `${sc.n}일마다` : '매일'; }
 
 /* ═════════════ 🧹 집안일 ═════════════ */
+/* 🧹 집안일 (26-10-02 다시 짬) — 사장님: 「한 번 정하면 해야 한다는 걸 알려주는 기능과, 했다는 체크가 중점」
+   왼쪽 해야 할 것 (밀림 → 오늘 → 한 번만) · 가운데 오늘 한 것 · 오른쪽 정기 집안일 + 「주기의 얼마나 왔나」 막대 */
+function choreGauge(c) {
+  if (!c.lastDone) return { p: c.next <= today ? 1 : 0, left: C.diffDays(c.next, today) };
+  const cycle = Math.max(1, C.diffDays(c.next, c.lastDone)), gone = C.diffDays(today, c.lastDone);
+  return { p: Math.min(1, gone / cycle), left: C.diffDays(c.next, today) };
+}
 function rChore() {
-  const all = choresSorted();
-  const 오늘함 = c => c.lastDone === today;
-  const g = { 밀림: all.filter(c => !오늘함(c) && c.next < today), 오늘: all.filter(c => 오늘함(c) || c.next === today).sort((a, b) => 오늘함(a) - 오늘함(b)), '이번 주': all.filter(c => !오늘함(c) && c.next > today && C.diffDays(c.next, today) <= 7), 나중: all.filter(c => !오늘함(c) && C.diffDays(c.next, today) > 7) };
-  const card = c => { const done = 오늘함(c), cls = c.who === 'her' ? 'her' : c.who === 'me' ? 'me' : 'any';
-    return `<div class="ch ${done ? 'done' : ''}"><span class="m" data-act="chEdit" data-id="${c.id}"><b>${esc(c.name)}</b><small class="${!done && c.next < today ? 'late' : ''}">${done ? `✓ 오늘 했음 · ${이름(c.lastBy || c.who)} · 다음 ${C.label(c.next)}` : choreSub(c) + (c.lastDone ? ` · 마지막 ${C.label(c.lastDone)}` : '')}</small></span>${done || c.next <= C.addDays(today, 7) ? `<button class="chk ${cls} ${done ? 'on' : ''}" data-act="chore" data-id="${c.id}" aria-label="${esc(c.name)} ${done ? '되돌리기' : '했음'}">${done ? '✓' : ''}</button>` : ''}</div>`; };
-  const body = `<div class="chores">${Object.entries(g).map(([k, v]) => `<div class="ccol ${k === '밀림' && v.length ? 'bad' : ''}"><h4><span>${k}</span><span>${v.length}</span></h4>${v.map(card).join('') || '<div class="empty" style="padding:6px 2px">없음</div>'}</div>`).join('')}</div>
-    <p style="color:var(--muted);font-size:13px;margin-top:10px">체크한 날부터 다음 날을 다시 셉니다 · 이름을 누르면 고치거나 뺄 수 있습니다</p>`;
-  return { top: topBar('🧹 집안일', '한 날부터 다시 셉니다', `<button class="btn" data-act="chNew">＋ 집안일</button>`), body };
+  const all = choresSorted(), 함 = c => c.lastDone === today;
+  const todo = all.filter(c => !함(c) && c.next <= today);
+  const done = all.filter(함);
+  const reg = all.filter(c => !c.once).sort((a, b) => choreGauge(b).p - choreGauge(a).p || (a.next < b.next ? -1 : 1));
+  const cls = c => c.who === 'her' ? 'her' : c.who === 'me' ? 'me' : 'any';
+  const regRow = c => { const g = choreGauge(c), d = 함(c), col = g.p >= 1 ? 'var(--bad)' : g.p >= .75 ? '#e0a100' : 'var(--we)';
+    return `<div class="it ${d ? 'done' : ''}"><span class="m" data-act="chEdit" data-id="${c.id}" style="cursor:pointer"><b>${esc(c.name)}</b><small>${d ? '오늘 함' : g.left < 0 ? `${-g.left}일 밀림` : g.left === 0 ? '오늘' : `${g.left}일 남음`} · ${C.everyText(c.every)} · ${이름(c.who)}</small><div class="gauge"><i style="width:${(d ? 0 : g.p) * 100}%;background:${col}"></i></div></span>${d ? '' : `<button class="chk ${cls(c)}" data-act="chore" data-id="${c.id}" aria-label="${esc(c.name)} 미리 했음" title="미리 했어요"></button>`}</div>`; };
+  const quick = `<div class="quick"><input class="field" id="choreQuick" placeholder="＋ 한 번만 할 일 (예: 택배 박스 버리기)" autocomplete="off"><button class="btn" data-act="chQuick">넣기</button></div>`;
+  const tabL = document.body.classList.contains('tabL');
+  const body = tabL
+    ? `<div class="cgrid">
+        <div class="card"><h3>해야 할 것 <small>${todo.length}개</small></h3>${todo.map(choreLine).join('') || '<div class="empty">다 했어요 👏</div>'}${quick}</div>
+        <div class="card"><h3>✅ 오늘 한 것 <small>${done.length}개</small></h3>${done.map(choreLine).join('') || '<div class="empty">아직 없음</div>'}</div>
+        <div class="card"><h3>정기 집안일 <small>다음까지 남은 날 · 이름 누르면 고치기</small></h3>${reg.map(regRow).join('') || '<div class="empty">「＋ 정기 집안일」로 넣어 주세요</div>'}</div></div>`
+    : `<div class="stack">
+        <div class="card"><h3>해야 할 것 <small>${todo.length}개</small></h3>${todo.map(choreLine).join('') || '<div class="empty">다 했어요 👏</div>'}${quick}</div>
+        <div class="card"><h3>✅ 오늘 한 것 <small>${done.length}개</small></h3>${done.map(choreLine).join('') || '<div class="empty">아직 없음</div>'}</div>
+        <div class="card"><h3>정기 집안일 <small>남은 날</small></h3>${reg.map(regRow).join('') || '<div class="empty">없음</div>'}</div></div>`;
+  return { top: topBar('🧹 집안일', '체크하면 그날부터 다시 셉니다', `<button class="btn" data-act="chNew">＋ 정기 집안일</button>`), body };
 }
 
 /* ═════════════ ⚙️ 설정 ═════════════ */
@@ -612,19 +687,19 @@ function openSheet(kind, data) { sheetKind = kind; F = JSON.parse(JSON.stringify
 function closeSheet() { $('#ov').classList.remove('show'); sheetKind = ''; }
 function seg(name, opts, v) { return `<div class="seg">${opts.map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-f="${name}" data-v="${k}">${l}</button>`).join('')}</div>`; }
 function dayChips(name, arr) { return `<div class="chips">${C.DAY.map((d, i) => `<button class="${(arr || []).includes(i) ? 'on' : ''}" data-ftog="${name}" data-v="${i}">${d}</button>`).join('')}</div>`; }
-const 약시각 = [['08:00', '아침'], ['12:30', '점심'], ['19:00', '저녁'], ['22:30', '자기 전']];
 function drawSheet() {
   let h = '';
   if (sheetKind === 'med') {
-    const ts = F.times || [];
-    h = `<h2>${F.id ? '약 고치기' : '💊 약 넣기'}</h2>
-      <div class="lbl">약 이름</div><input class="field" data-in="name" value="${esc(F.name)}" placeholder="예: 비타민D">
-      <div class="lbl">누가 먹나</div>${seg('who', [['me', 이름('me')], ['her', 이름('her')]], F.who)}
-      <div class="lbl">먹는 시각 (여러 개 가능)</div>
-      <div class="chips">${약시각.map(([t, l]) => `<button class="${ts.includes(t) ? 'on' : ''}" data-ftog="times" data-v="${t}">${l} ${t}</button>`).join('')}${ts.filter(t => !약시각.some(p => p[0] === t)).map(t => `<button class="on" data-ftog="times" data-v="${t}">${t} ✕</button>`).join('')}</div>
-      <div style="display:flex;gap:8px;margin-top:8px"><input class="field" type="time" id="tAdd" style="flex:1"><button class="btn sec" data-act="tAdd">시각 더하기</button></div>
-      <div class="lbl">메모 (선택)</div><input class="field" data-in="memo" value="${esc(F.memo)}" placeholder="예: 식후">
-      <div class="row2">${F.id ? `<button class="btn red" data-act="medOff">이 약 빼기</button>` : ''}<button class="btn" data-act="medSave" ${F.name && ts.length ? '' : 'disabled'}>${F.id ? '저장' : '넣기'}</button></div>`;
+    const ps = F.pills || [];
+    h = `<h2>${F.id ? '세트 고치기' : '💊 세트 만들기'}</h2><p class="more" style="margin:0">같은 때 한 번에 먹는 약 묶음 — 한 번 만들면 매일 나옵니다</p>
+      <div class="lbl">세트 이름</div><input class="field" data-in="name" value="${esc(F.name)}" placeholder="예: 아침 공통 세트" autocomplete="off">
+      <div class="lbl">누가 먹나</div>${seg('who', [['we', '같이 (각자 체크)'], ['me', 이름('me')], ['her', 이름('her')]], F.who)}
+      <div class="lbl">언제</div>${seg('slot', C.SLOTS.map(([sl]) => [sl, sl]), F.slot)}
+      <div class="lbl">들어가는 약 <span style="font-weight:500">— 누르면 빠짐</span></div>
+      <div class="chips">${ps.map((p, i) => `<button class="on" data-act="pillDel" data-i="${i}">${esc(p)} ✕</button>`).join('') || '<span class="more">아직 없음</span>'}</div>
+      <div style="display:flex;gap:8px;margin-top:8px"><input class="field" id="pillAdd" placeholder="약 이름 (예: 비타민D)" autocomplete="off" style="flex:1"><button class="btn sec" data-act="pillAdd">더하기</button></div>
+      <div class="lbl">알림 시각</div><input class="field" type="time" data-in="time" value="${F.time || C.slotTime(F.slot)}">
+      <div class="row2">${F.id ? `<button class="btn red" data-act="medOff">이 세트 빼기</button>` : ''}<button class="btn" data-act="medSave" ${F.name && ps.length ? '' : 'disabled'}>${F.id ? '저장' : '만들기'}</button></div>`;
   } else if (sheetKind === 'ev') {
     const r = F.repeat || { type: 'none' };
     h = `<h2>${F.id ? '일정 고치기' : '📅 일정 넣기'}</h2>
@@ -665,8 +740,8 @@ function drawSheet() {
     h = `<h2>${F.id ? '집안일 고치기' : '🧹 집안일 넣기'}</h2>
       <div class="lbl">무엇</div><input class="field" data-in="name" value="${esc(F.name)}" placeholder="예: 화장실 청소">
       <div class="lbl">누가</div>${seg('who', [['me', 이름('me')], ['her', 이름('her')], ['any', '아무나']], F.who)}
-      <div class="lbl">얼마마다</div>${seg('every.type', [['days', '며칠마다'], ['weekdays', '요일']], ev.type)}
-      ${ev.type === 'days' ? `<div class="chips" style="margin-top:8px">${[[1, '매일'], [3, '3일'], [7, '1주'], [14, '2주'], [30, '한 달'], [90, '3달']].map(([n, l]) => `<button class="${+ev.n === n ? 'on' : ''}" data-f="every.n" data-v="${n}" data-num="1">${l}</button>`).join('')}</div>
+      ${F.once ? '<div class="more" style="margin-top:12px">한 번만 할 일입니다 — 하면 「오늘 한 것」으로 가고 다음 날 사라집니다</div>' : `<div class="lbl">얼마마다</div>`}${F.once ? '' : seg('every.type', [['days', '며칠마다'], ['weekdays', '요일']], ev.type)}
+      ${F.once ? '' : ev.type === 'days' ? `<div class="chips" style="margin-top:8px">${[[1, '매일'], [3, '3일'], [7, '1주'], [14, '2주'], [30, '한 달'], [90, '3달']].map(([n, l]) => `<button class="${+ev.n === n ? 'on' : ''}" data-f="every.n" data-v="${n}" data-num="1">${l}</button>`).join('')}</div>
         <input class="field" type="number" min="1" data-in="every.n" value="${ev.n || 7}" style="margin-top:8px">` : `<div style="margin-top:8px">${dayChips('every.days', ev.days)}</div>`}
       ${F.id ? `<div class="lbl">마지막으로 한 날</div><input class="field" type="date" data-in="lastDone" value="${F.lastDone || ''}">` : `<div class="lbl">처음 할 날</div><input class="field" type="date" data-in="start" value="${F.start || today}">`}
       <div class="row2">${F.id ? `<button class="btn red" data-act="chOff">빼기</button>` : ''}<button class="btn" data-act="chSave" ${F.name ? '' : 'disabled'}>${F.id ? '저장' : '넣기'}</button></div>`;
@@ -690,7 +765,7 @@ function drawSheet() {
 function setF(path, v) { const ks = path.split('.'); let o = F; ks.slice(0, -1).forEach(k => { o[k] = o[k] || {}; o = o[k]; }); o[ks[ks.length - 1]] = v; }
 function getF(path) { return path.split('.').reduce((o, k) => o && o[k], F); }
 function refreshSaveBtn() { const b = $('#sheet [data-act$="Save"]'); if (!b) return;
-  const ok = { med: F.name && (F.times || []).length, ev: F.title && F.date, food: F.name, rt: F.name, ch: F.name, adhoc: F.name, rename: F.name }[sheetKind];
+  const ok = { med: F.name && (F.pills || []).length, ev: F.title && F.date, food: F.name, rt: F.name, ch: F.name, adhoc: F.name, rename: F.name }[sheetKind];
   b.disabled = !ok; }
 
 /* ═════════════ 누르기 ═════════════ */
@@ -709,6 +784,7 @@ document.addEventListener('click', async e => {
   const g = e.target.closest('[data-go]'); if (g) return go(g.dataset.go);
   // 아래 판 안의 고르기
   const fb = e.target.closest('[data-f]'); if (fb) { setF(fb.dataset.f, fb.dataset.num ? +fb.dataset.v : fb.dataset.v);
+    if (fb.dataset.f === 'slot' && sheetKind === 'med') F.time = C.slotTime(F.slot);
     return drawSheet(); }
   const ft = e.target.closest('[data-ftog]'); if (ft) { const k = ft.dataset.ftog, v = /days$/.test(k) ? +ft.dataset.v : ft.dataset.v;
     const arr = [...(getF(k) || (k === 'repeat.days' ? [C.wdOf(F.date)] : []))]; const i = arr.indexOf(v); i < 0 ? arr.push(v) : arr.splice(i, 1);
@@ -718,18 +794,22 @@ document.addEventListener('click', async e => {
   switch (a) {
     case 'close': return closeSheet();
     /* 약 */
-    case 'med': { const key = b.dataset.key, on = taken(key), w = b.dataset.who;
-      await DB.put('medLogs', key, { date: today, medId: b.dataset.mid, time: b.dataset.t, who: w, taken: !on, at: Date.now(), by: by(w) });
-      if (!on) toast(`💊 ${이름(w)} · ${(D.meds[b.dataset.mid] || {}).name || ''} 먹음`); return; }
-    case 'poke': { b.disabled = true; const w = b.dataset.who, now = C.kst().min;
-      const xs = C.medsFor(Object.values(D.meds), w, today).filter(x => !taken(x.key) && C.hm2min(x.time) <= now);
-      const r = await api({ a: 'poke', to: w, text: xs.map(x => `${x.med.name} ${x.time}`).join(', ') });
+    case 'med': { const key = b.dataset.key, on = taken(key), w = b.dataset.who, st = D.meds[b.dataset.sid] || {};
+      await DB.put('medLogs', key, { date: today, setId: b.dataset.sid, who: w, taken: !on, at: Date.now(), by: by(w) });
+      if (!on) toast(`💊 ${이름(w)} · ${st.name || ''} 먹음`); return; }
+    case 'poke': { b.disabled = true; const w = b.dataset.who;
+      const xs = mySets(w).filter(x => !taken(x.key) && C.hm2min(x.time) <= C.kst().min);
+      const r = await api({ a: 'poke', to: w, text: xs.map(x => `${x.slot} ${x.set.name}`).join(', ') });
       toast(r.ok ? `🔔 ${이름(w)}에게 보냈습니다` : '⚠️ 못 보냈습니다: ' + (r.error || '')); return; }
-    case 'medNew': return openSheet('med', { name: '', who: isTab() ? 'me' : (ME || 'me'), times: [], memo: '' });
+    case 'medNew': { const sl = C.slotOf(C.kst().time); return openSheet('med', { name: '', who: 'we', slot: sl, time: C.slotTime(sl), pills: [] }); }
     case 'medEdit': return openSheet('med', D.meds[id]);
-    case 'tAdd': { const v = $('#tAdd').value; if (!v) return; F.times = [...new Set([...(F.times || []), v])].sort(); return drawSheet(); }
-    case 'medSave': { const nid = F.id || uid(); await DB.put('meds', nid, { name: F.name.trim(), who: F.who, times: [...(F.times || [])].sort(), memo: F.memo || '', ...(F.id ? {} : { created: Date.now(), start: today }) }); closeSheet(); return toast(F.id ? '저장했습니다' : `💊 ${F.name} 넣었습니다`); }
+    case 'pillAdd': { const v = ($('#pillAdd').value || '').trim(); if (!v) return; F.pills = [...new Set([...(F.pills || []), v])]; drawSheet(); setTimeout(() => $('#pillAdd') && $('#pillAdd').focus(), 0); return; }
+    case 'pillDel': F.pills.splice(+b.dataset.i, 1); return drawSheet();
+    case 'medSave': { const nid = F.id || uid(), v = ($('#pillAdd') && $('#pillAdd').value || '').trim(); if (v) F.pills = [...new Set([...(F.pills || []), v])];
+      await DB.put('meds', nid, { name: F.name.trim(), who: F.who, slot: F.slot, time: F.time || C.slotTime(F.slot), pills: F.pills || [], ...(F.id ? {} : { created: Date.now(), start: today }) });
+      closeSheet(); return toast(F.id ? '저장했습니다' : `💊 ${F.name.trim()} 만들었습니다`); }
     case 'medOff': { const mid = F.id, name = F.name; await DB.put('meds', mid, { off: true, offAt: Date.now() }); closeSheet(); return toast(`${name} 뺐습니다`, () => DB.put('meds', mid, { off: false })); }
+
     /* 일정 */
     case 'calMode': calMode = b.dataset.v; ls.set('home-calmode', calMode); lastHtml = ''; return render();
     case 'calMove': { const d = +b.dataset.d, base = calAnchor || today;
@@ -791,6 +871,9 @@ document.addEventListener('click', async e => {
       await DB.put('choreLogs', uid(), { choreId: id, date: today, by: by(), at: Date.now() }).catch(() => {});
       const nx = C.choreNext({ ...c, lastDone: today });
       return toast(`🧹 ${c.name} 완료 · 다음 ${C.label(nx)}`, () => DB.put('chores', id, { lastDone: prev })); }
+    case 'chQuick': { const v = ($('#choreQuick').value || '').trim(); if (!v) return;
+      await DB.put('chores', uid(), { name: v, who: isTab() ? 'any' : (ME || 'any'), once: true, created: today, start: today });
+      return toast(`🧹 「${v}」 넣었습니다 — 하면 체크`); }
     case 'chNew': return openSheet('ch', { name: '', who: 'any', every: { type: 'days', n: 7 }, start: today });
     case 'chEdit': return openSheet('ch', D.chores[id]);
     case 'chSave': { const nid = F.id || uid(), ev = { ...(F.every || { type: 'days', n: 7 }) };
@@ -815,7 +898,8 @@ document.addEventListener('input', e => {
   if (k === 'date' && sheetKind === 'ev') return drawSheet();
   refreshSaveBtn();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); if (e.key === 'Enter' && e.target.id === 'choreQuick') { e.preventDefault(); $('[data-act="chQuick"]').click(); return; }
+  if (e.key === 'Enter' && e.target.id === 'pillAdd') { e.preventDefault(); $('#sheet [data-act="pillAdd"]').click(); } });
 
 /* ═════════════ 🔔 알림 받기 ═════════════ */
 const pushOn = () => ls.get('home-push', false);
