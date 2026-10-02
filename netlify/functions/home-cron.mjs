@@ -8,7 +8,7 @@
    ⚠️ 서버는 UTC 입니다. 날짜·시각은 전부 core.js 의 kst() 로
    ═══════════════════════════════════════════════════════════ */
 import { admin, HOME, readCol, members, push, partner, nameOf } from './_home.mjs';
-import { kst, setsFor, hm2min, eventsOn } from '../../public/home/core.js';
+import { kst, medsFor, hm2min, eventsOn, SLOTS } from '../../public/home/core.js';
 
 export const config = { schedule: '*/5 * * * *' };
 
@@ -25,18 +25,18 @@ export default async () => {
   ]);
   const jobs = [];
 
-  /* 💊 약 */
+  /* 💊 약 — 사람 × 시간대(아침·점심·저녁) 마다 알림 한 통. 안 먹은 약 이름을 묶어서 */
   for (const who of ['me', 'her']) {
-    for (const x of setsFor(Object.values(meds), who, today)) {   // 세트 단위 (26-10-02)
-      const t = hm2min(x.time);
-      if (now.min < t || (logs[x.key] && logs[x.key].taken)) continue;
-      // 오늘 그 시각 뒤에 새로 넣은 약이면 오늘 그 시각은 건너뜀
-      if (x.set.created && x.set.created > Date.parse(`${today}T${x.time}:00+09:00`)) continue;
-      if (now.min < t + 60) {
-        jobs.push(once(`due_${x.key}`, () => push(db, [who, 'tab'], `💊 약 먹을 시간`, `${nameOf(m, who)} · ${x.slot} ${x.set.name} (${(x.set.pills || []).join('·')})`, `med-${x.key}`)));
-      } else {
-        jobs.push(once(`late_${x.key}`, () => push(db, [who, partner(who), 'tab'], `⏰ 아직 약을 안 먹었어요`, `${nameOf(m, who)} · ${x.slot} ${x.set.name} — ${x.time}부터 1시간 지났어요`, `med-${x.key}`)));
-      }
+    const all = medsFor(Object.values(meds), who, today);
+    for (const [slot, time] of SLOTS) {
+      const t = hm2min(time);
+      if (now.min < t) continue;
+      // 오늘 그 시각 뒤에 새로 넣은 약은 오늘 그 시각 알림에서 뺌
+      const left = all.filter(x => x.slot === slot && !(logs[x.key] && logs[x.key].taken) && !(x.med.created && x.med.created > Date.parse(`${today}T${time}:00+09:00`)));
+      if (!left.length) continue;
+      const names = left.map(x => x.med.name).join(' · ');
+      if (now.min < t + 60) jobs.push(once(`due_${who}_${slot}`, () => push(db, [who, 'tab'], `💊 ${slot} 약 먹을 시간`, `${nameOf(m, who)} · ${names}`, `med-${who}-${slot}`)));
+      else jobs.push(once(`late_${who}_${slot}`, () => push(db, [who, partner(who), 'tab'], `⏰ ${nameOf(m, who)} ${slot} 약을 아직 안 먹었어요`, `${names} — ${time}부터 1시간 지났어요`, `med-${who}-${slot}`)));
     }
   }
 

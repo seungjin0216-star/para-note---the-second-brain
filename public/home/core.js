@@ -120,6 +120,10 @@ export function choreNext(ch) {
   const ev = ch.every || { type: 'days', n: 7 };
   if (ch.once) return ch.lastDone ? '9999-12-31' : (ch.start || ch.created || kst().date);   // 한 번만 할 일 — 하면 끝
   if (!ch.lastDone) return ch.start || ch.created || kst().date;
+  if (ev.type === 'monthly') {   // 매달 — 한 날의 다음 달 같은 날 (31일이 없으면 그 달 마지막 날)
+    const [y, m, d] = ch.lastDone.split('-').map(Number), ny = m === 12 ? y + 1 : y, nm = m === 12 ? 1 : m + 1;
+    return `${ny}-${pad(nm)}-${pad(Math.min(d, lastDay(ny, nm)))}`;
+  }
   if (ev.type === 'weekdays' && (ev.days || []).length) {
     for (let i = 1; i <= 7; i++) { const s = addDays(ch.lastDone, i); if (ev.days.includes(wdOf(s))) return s; }
   }
@@ -128,23 +132,29 @@ export function choreNext(ch) {
 export function everyText(ev) {
   if (!ev) return '';
   if (ev.type === 'weekdays') return (ev.days || []).map(d => DAY[d]).join('·');
+  if (ev.type === 'monthly') return '매달';
   const n = +ev.n || 7;
   if (n % 30 === 0) return n === 30 ? '한 달마다' : `${n / 30}달마다`;
-  if (n % 7 === 0) return n === 7 ? '1주마다' : `${n / 7}주마다`;
+  if (n === 7) return '매주';
+  if (n === 14) return '격주';
+  if (n % 7 === 0) return `${n / 7}주마다`;
   return n === 1 ? '매일' : `${n}일마다`;
 }
 
-/* ── 약 — 「세트」 (사장님 26-10-02) ───────────────────────
-   「아침·점심·저녁 · 공통으로 먹는 세트와 개별 세트 · 꼬박꼬박 다 먹기 위해」
-   set = { name, who: 'we'|'me'|'her', slot: '아침'|'점심'|'저녁'|'자기 전', time, pills: [] }
-   기록 키  날짜_세트id_사람   (같이 세트는 두 사람이 따로 체크) */
-export const SLOTS = [['아침', '08:00'], ['점심', '12:30'], ['저녁', '19:00'], ['자기 전', '22:30']];
-export const slotTime = (slot) => (SLOTS.find(x => x[0] === slot) || ['', '08:00'])[1];
-export function slotOf(t) { const m = hm2min(t); return m < 11 * 60 ? '아침' : m < 16 * 60 ? '점심' : m < 21 * 60 ? '저녁' : '자기 전'; }
-export function medKey(s, setId, who) { return `${s}_${setId}_${who}`; }
-/** 그날 그 사람이 먹을 세트 [{set, who, time, slot, key}] — 시간대 순 */
-export function setsFor(sets, who, s) {
-  return sets.filter(x => !x.off && x.slot && (x.who === 'we' || x.who === who) && (!x.start || x.start <= s))
-    .map(x => ({ set: x, who, slot: x.slot, time: x.time || slotTime(x.slot), key: medKey(s, x.id, who) }))
-    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : (a.set.who === 'we' ? -1 : 1));
+/* ── 약 — 하나씩 (26-10-02 두 번째) ─────────────────────
+   사장님: 「약 세트 그냥 없애고 각각 알아서 보게끔」 · 「아침, 점심, 저녁」
+   med = { name, who: 'we'|'me'|'her', slots: ['아침','저녁'] }   we = 둘 다 먹는 약 (각자 체크)
+   기록 키  날짜_약id_시간대_사람
+   ⚠️ 26-10-02 오전의 「세트」(slot · pills[]) 는 화면이 열릴 때 약 하나씩으로 풀어 옮깁니다 */
+export const SLOTS = [['아침', '08:00'], ['점심', '12:30'], ['저녁', '19:00']];
+export const slotTime = (slot) => (SLOTS.find(x => x[0] === slot) || ['', '19:00'])[1];
+export function slotOf(t) { const m = hm2min(t); return m < 11 * 60 ? '아침' : m < 16 * 60 ? '점심' : '저녁'; }
+export function medKey(s, medId, slot, who) { return `${s}_${medId}_${slot}_${who}`; }
+/** 그날 그 사람이 먹을 것 [{med, who, slot, time, key}] — 시간대 → 같이 먼저 → 이름 */
+export function medsFor(meds, who, s) {
+  const out = [];
+  meds.filter(m => !m.off && (m.slots || []).length && (m.who === 'we' || m.who === who) && (!m.start || m.start <= s))
+    .forEach(m => m.slots.forEach(sl => { if (SLOTS.some(x => x[0] === sl)) out.push({ med: m, who, slot: sl, time: slotTime(sl), key: medKey(s, m.id, sl, who) }); }));
+  const order = sl => SLOTS.findIndex(x => x[0] === sl);
+  return out.sort((a, b) => order(a.slot) - order(b.slot) || (a.med.who === 'we' ? 0 : 1) - (b.med.who === 'we' ? 0 : 1) || (a.med.name < b.med.name ? -1 : 1));
 }

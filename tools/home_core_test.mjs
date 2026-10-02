@@ -30,11 +30,15 @@ const L={'2026-10-01_me_a':1,'2026-09-30_me_a':1,'2026-09-29_me_a':1};
 eq(c.streak(R,L,'me','2026-10-02'),3,'오늘 아직 → 어제부터 3일');
 L['2026-10-02_me_a']=1; eq(c.streak(R,L,'me','2026-10-02'),4,'오늘 하면 4일');
 eq(c.dayDone(R,{'2026-10-04_me_a':1},'me','2026-10-04'),false,'일요일은 b 도 해야 다 함');
-// 약 세트
-const SETS=[{id:'a',who:'we',slot:'아침',pills:['비타민D']},{id:'b',who:'me',slot:'저녁',time:'19:30'},{id:'c',who:'her',slot:'점심'},{id:'d',who:'we',slot:'자기 전',off:true}];
-eq(c.setsFor(SETS,'me','2026-10-02').map(x=>x.key),['2026-10-02_a_me','2026-10-02_b_me'],'내 세트 = 같이 + 나만 · 뺀 세트 제외');
-eq(c.setsFor(SETS,'her','2026-10-02').map(x=>x.time),['08:00','12:30'],'시각 없으면 시간대 기본 시각');
-eq([c.slotOf('07:00'),c.slotOf('13:00'),c.slotOf('20:59'),c.slotOf('22:00')],['아침','점심','저녁','자기 전'],'시각 → 시간대');
+// 약 하나씩
+const MEDS=[{id:'a',who:'we',slots:['아침','저녁'],name:'오메가3'},{id:'b',who:'me',slots:['아침'],name:'혈압약'},{id:'c',who:'her',slots:['점심'],name:'철분'},{id:'d',who:'we',slots:['아침'],off:true,name:'X'}];
+eq(c.medsFor(MEDS,'me','2026-10-02').map(x=>x.key),['2026-10-02_a_아침_me','2026-10-02_b_아침_me','2026-10-02_a_저녁_me'],'내 약 = 같이 + 나만 · 시간대 순 · 같이 먼저 · 뺀 약 제외');
+eq(c.medsFor(MEDS,'her','2026-10-02').map(x=>x.time),['08:00','12:30','19:00'],'시간대 기본 시각');
+eq([c.slotOf('07:00'),c.slotOf('13:00'),c.slotOf('22:00')],['아침','점심','저녁'],'시각 → 시간대 (자기 전 없음)');
+// 매주 · 격주 · 매달
+eq(c.choreNext({lastDone:'2026-01-31',every:{type:'monthly'}}),'2026-02-28','매달 — 1/31 다음은 2/28');
+eq(c.choreNext({lastDone:'2026-12-15',every:{type:'monthly'}}),'2027-01-15','매달 — 해넘김');
+eq([c.everyText({type:'days',n:7}),c.everyText({type:'days',n:14}),c.everyText({type:'monthly'})],['매주','격주','매달'],'주기 글자');
 // 한 번만 할 일
 eq(c.choreNext({once:true,created:'2026-10-02'}),'2026-10-02','한 번만 — 안 했으면 넣은 날');
 eq(c.choreNext({once:true,created:'2026-10-02',lastDone:'2026-10-02'}),'9999-12-31','한 번만 — 하면 끝');
