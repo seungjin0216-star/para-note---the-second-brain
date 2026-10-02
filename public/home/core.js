@@ -146,15 +146,24 @@ export function everyText(ev) {
    med = { name, who: 'we'|'me'|'her', slots: ['아침','저녁'] }   we = 둘 다 먹는 약 (각자 체크)
    기록 키  날짜_약id_시간대_사람
    ⚠️ 26-10-02 오전의 「세트」(slot · pills[]) 는 화면이 열릴 때 약 하나씩으로 풀어 옮깁니다 */
-export const SLOTS = [['아침', '08:00'], ['점심', '12:30'], ['저녁', '19:00']];
-export const slotTime = (slot) => (SLOTS.find(x => x[0] === slot) || ['', '19:00'])[1];
-export function slotOf(t) { const m = hm2min(t); return m < 11 * 60 ? '아침' : m < 16 * 60 ? '점심' : '저녁'; }
+export const SLOTS = [['아침', '07:30'], ['점심', '14:00'], ['자기 전', '00:30']];
+/* ⚠️ 26-10-03 사장님: 「아침(공복) 7:30 · 점심 14:00 · 자기 전 00:30」
+   자기 전 00:30 은 달력으로는 다음 날이지만 **그날 약**입니다 (그날 밤에 자기 전에 먹는 것)
+   → 약의 하루는 새벽 5시에 바뀝니다. 00:30 = 그날의 24:30 (1470분)
+   ⚠️ 옛 「저녁」·「자기전」 약은 「자기 전」으로 봅니다 (안 보이면 조용히 빠지는 병) */
+export const SLOT_ALIAS = { 저녁: '자기 전', 자기전: '자기 전' };
+export const SLOT_LABEL = { 아침: '아침 (공복)', 점심: '점심', '자기 전': '자기 전' };
+export const slotTime = (slot) => (SLOTS.find(x => x[0] === (SLOT_ALIAS[slot] || slot)) || ['', '00:30'])[1];
+export const slotMin = (slot) => { const m = hm2min(slotTime(slot)); return m < 5 * 60 ? m + 1440 : m; };
+/** 약의 「오늘」 — 새벽 5시 전이면 아직 어제 */
+export function medNow(d = new Date()) { const k = kst(d), early = k.min < 5 * 60; return { day: early ? addDays(k.date, -1) : k.date, min: early ? k.min + 1440 : k.min }; }
+export function slotOf(t) { const m = hm2min(t); return m >= 5 * 60 && m < 11 * 60 ? '아침' : m >= 11 * 60 && m < 18 * 60 ? '점심' : '자기 전'; }
 export function medKey(s, medId, slot, who) { return `${s}_${medId}_${slot}_${who}`; }
 /** 그날 그 사람이 먹을 것 [{med, who, slot, time, key}] — 시간대 → 같이 먼저 → 이름 */
 export function medsFor(meds, who, s) {
   const out = [];
   meds.filter(m => !m.off && (m.slots || []).length && (m.who === 'we' || m.who === who) && (!m.start || m.start <= s))
-    .forEach(m => m.slots.forEach(sl => { if (SLOTS.some(x => x[0] === sl)) out.push({ med: m, who, slot: sl, time: slotTime(sl), key: medKey(s, m.id, sl, who) }); }));
+    .forEach(m => [...new Set(m.slots.map(x => SLOT_ALIAS[x] || x))].forEach(sl => { if (SLOTS.some(x => x[0] === sl)) out.push({ med: m, who, slot: sl, time: slotTime(sl), min: slotMin(sl), key: medKey(s, m.id, sl, who) }); }));
   const order = sl => SLOTS.findIndex(x => x[0] === sl);
   return out.sort((a, b) => order(a.slot) - order(b.slot) || (a.med.who === 'we' ? 0 : 1) - (b.med.who === 'we' ? 0 : 1) || (a.med.name < b.med.name ? -1 : 1));
 }

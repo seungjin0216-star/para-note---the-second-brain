@@ -8,7 +8,7 @@
    ⚠️ 서버는 UTC 입니다. 날짜·시각은 전부 core.js 의 kst() 로
    ═══════════════════════════════════════════════════════════ */
 import { admin, HOME, readCol, members, push, partner, nameOf } from './_home.mjs';
-import { kst, medsFor, hm2min, eventsOn, SLOTS } from '../../public/home/core.js';
+import { kst, medsFor, hm2min, eventsOn, SLOTS, SLOT_LABEL, slotMin, medNow } from '../../public/home/core.js';
 
 export const config = { schedule: '*/5 * * * *' };
 
@@ -21,24 +21,29 @@ export default async () => {
   const once = async (key, fn) => { if (noted[key] || mark[key]) return; mark[key] = Date.now(); await fn(); };
 
   const [m, meds, logs, events] = await Promise.all([
-    members(db), readCol(db, 'meds'), readCol(db, 'medLogs', ['date', '==', today]), readCol(db, 'events'),
+    members(db), readCol(db, 'meds'), readCol(db, 'medLogs', ['date', '==', medNow().day]), readCol(db, 'events'),
   ]);
   const jobs = [];
 
-  /* 💊 약 — 사람 × 시간대(아침·점심·저녁) 마다 알림 한 통. 안 먹은 약 이름을 묶어서 */
+  /* 💊 약 — 사람 × 시간대(아침 7:30 · 점심 14:00 · 자기 전 00:30) 마다 알림 한 통
+     ⚠️ 약의 하루는 새벽 5시에 바뀝니다 (00:30 자기 전 = 그날 약). 날짜·분은 medNow() 로 */
+  const md = medNow(), mdRef = db.doc(`${HOME}/notified/${md.day}`);
+  const mdNoted = md.day === today ? noted : ((await mdRef.get()).data() || {}), mdMark = {};
   for (const who of ['me', 'her']) {
-    const all = medsFor(Object.values(meds), who, today);
+    const all = medsFor(Object.values(meds), who, md.day);
     for (const [slot, time] of SLOTS) {
-      const t = hm2min(time);
-      if (now.min < t) continue;
-      // 오늘 그 시각 뒤에 새로 넣은 약은 오늘 그 시각 알림에서 뺌
-      const left = all.filter(x => x.slot === slot && !(logs[x.key] && logs[x.key].taken) && !(x.med.created && x.med.created > Date.parse(`${today}T${time}:00+09:00`)));
+      const t = slotMin(slot);
+      if (md.min < t) continue;
+      const left = all.filter(x => x.slot === slot && !(logs[x.key] && logs[x.key].taken) && !(x.med.created && x.med.created > Date.now() - (md.min - t) * 60e3));
       if (!left.length) continue;
-      const names = left.map(x => x.med.name).join(' · ');
-      if (now.min < t + 60) jobs.push(once(`due_${who}_${slot}`, () => push(db, [who, 'tab'], `💊 ${slot} 약 먹을 시간`, `${nameOf(m, who)} · ${names}`, `med-${who}-${slot}`)));
-      else jobs.push(once(`late_${who}_${slot}`, () => push(db, [who, partner(who), 'tab'], `⏰ ${nameOf(m, who)} ${slot} 약을 아직 안 먹었어요`, `${names} — ${time}부터 1시간 지났어요`, `med-${who}-${slot}`)));
+      const names = left.map(x => x.med.name).join(' · '), key = md.min < t + 60 ? `due_${who}_${slot}` : `late_${who}_${slot}`;
+      if (mdNoted[key] || mdMark[key]) continue;
+      mdMark[key] = Date.now();
+      if (key.startsWith('due')) jobs.push(push(db, [who, 'tab'], `💊 ${SLOT_LABEL[slot]} 약 먹을 시간 (${time})`, `${nameOf(m, who)} · ${names}`, `med-${who}-${slot}`));
+      else jobs.push(push(db, [who, partner(who), 'tab'], `⏰ ${nameOf(m, who)} ${SLOT_LABEL[slot]} 약을 아직 안 먹었어요`, `${names} — ${time}부터 1시간 지났어요`, `med-${who}-${slot}`));
     }
   }
+  if (Object.keys(mdMark).length) jobs.push(mdRef.set(mdMark, { merge: true }));
 
   /* 📅 일정 */
   const todays = eventsOn(Object.values(events), today);
