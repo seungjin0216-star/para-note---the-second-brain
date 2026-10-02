@@ -1,0 +1,34 @@
+import * as c from '../public/home/core.js';
+const eq=(a,b,m)=>{ if(JSON.stringify(a)!==JSON.stringify(b)){ console.log('❌',m,a,b); process.exitCode=1;} else console.log('✅',m); };
+// KST 경계: UTC 14:59 = KST 23:59 / UTC 15:00 = 다음날 00:00
+eq(c.kst(new Date('2026-10-02T14:59:00Z')).date,'2026-10-02','KST 23:59 는 그날');
+eq(c.kst(new Date('2026-10-02T15:00:00Z')).date,'2026-10-03','KST 자정 넘으면 다음날');
+eq(c.kst(new Date('2026-10-02T15:00:00Z')).wd,6,'10/3 은 토요일');
+// 소비기한
+eq(c.dday('2026-10-02','2026-10-02').text,'오늘까지','기한 당일');
+eq(c.dday('2026-10-01','2026-10-02').text,'1일 지남','하루 지남');
+eq(c.dday('2026-10-03','2026-10-02').cls,'r','D-1 빨강');
+eq(c.dday('2026-10-05','2026-10-02').cls,'y','D-3 노랑');
+eq(c.dday('2026-10-06','2026-10-02').cls,'n','D-4 보통');
+eq(c.addDays('2026-12-29',5),'2027-01-03','반찬 5일 해넘김');
+// 반복
+const m31={date:'2026-01-31',repeat:{type:'monthly'}};
+eq(['2026-02-28','2026-03-31','2026-04-30','2026-04-29'].map(s=>c.occursOn(m31,s)),[true,true,true,false],'매월 31일 → 짧은 달 마지막날');
+const y29={date:'2024-02-29',repeat:{type:'yearly'}};
+eq(['2025-02-28','2028-02-29','2028-02-28'].map(s=>c.occursOn(y29,s)),[true,true,false],'2/29 매년');
+const wk={date:'2026-10-02',repeat:{type:'weekly',days:[1,5]}};
+eq(['2026-10-02','2026-10-05','2026-10-06','2026-09-28'].map(s=>c.occursOn(wk,s)),[true,true,false,false],'매주 월·금 (시작 전 X)');
+const n3={date:'2026-10-02',repeat:{type:'everyN',n:3},until:'2026-10-08'};
+eq(['2026-10-05','2026-10-08','2026-10-11','2026-10-06'].map(s=>c.occursOn(n3,s)),[true,true,false,false],'3일마다 + 끝나는 날');
+// 집안일
+eq(c.choreNext({lastDone:'2026-10-02',every:{type:'days',n:14}}),'2026-10-16','2주마다');
+eq(c.choreNext({lastDone:'2026-10-02',every:{type:'weekdays',days:[1,5]}}),'2026-10-05','월·금 — 금요일에 하면 다음 월요일');
+eq(c.choreNext({lastDone:'2026-10-05',every:{type:'weekdays',days:[1,5]}}),'2026-10-09','월요일에 하면 금요일');
+// 운동 연속
+const R=[{id:'a',who:'me',sched:{type:'daily'}},{id:'b',who:'me',sched:{type:'days',days:[0]}}];
+const L={'2026-10-01_me_a':1,'2026-09-30_me_a':1,'2026-09-29_me_a':1};
+eq(c.streak(R,L,'me','2026-10-02'),3,'오늘 아직 → 어제부터 3일');
+L['2026-10-02_me_a']=1; eq(c.streak(R,L,'me','2026-10-02'),4,'오늘 하면 4일');
+eq(c.dayDone(R,{'2026-10-04_me_a':1},'me','2026-10-04'),false,'일요일은 b 도 해야 다 함');
+// 약
+eq(c.medsFor([{id:'m',who:'me',times:['22:00','08:00']},{id:'x',who:'her',times:['09:00']},{id:'o',who:'me',off:true,times:['10:00']}],'me','2026-10-02').map(x=>x.time),['08:00','22:00'],'약 시각순 · 뺀 약 제외');

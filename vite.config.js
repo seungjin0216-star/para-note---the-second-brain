@@ -36,6 +36,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         // 오프라인에서도 앱 열리도록
         navigateFallback: '/index.html',
+        // ⚠️ 우리집(/home/)은 따로 도는 앱입니다. 제2의뇌 화면으로 바꿔치기하지 않게 (26-10-02)
+        navigateFallbackDenylist: [/^\/home/],
       },
     }),
   ],

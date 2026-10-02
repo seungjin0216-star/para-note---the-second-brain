@@ -7,6 +7,10 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
+    // 🏠 우리집 (/home/) — homes/main/** 는 두 사람 이메일만 (26-10-02)
+    //    ⚠️ 실제 게시된 규칙에만 이메일이 있습니다. 저장소가 Public 이라 여기엔 안 적습니다
+    //    ⚠️ 이 파일을 그대로 게시하면 우리집이 막힙니다 → 우리집_APP.md 「보안 규칙」 절의 전문을 쓰세요
+
     // 다른 경로는 전면 차단
     match /{document=**} {
       allow read, write: if false;
