@@ -162,7 +162,10 @@ export function medKey(s, medId, slot, who) { return `${s}_${medId}_${slot}_${wh
 /** 그날 그 사람이 먹을 것 [{med, who, slot, time, key}] — 시간대 → 같이 먼저 → 이름 */
 export function medsFor(meds, who, s) {
   const out = [];
-  meds.filter(m => !m.off && (m.slots || []).length && (m.who === 'we' || m.who === who) && (!m.start || m.start <= s))
+  meds.filter(m => !m.off && (m.slots || []).length && (m.who === 'we' || m.who === who))
+    /* ⚠️ 26-10-03 「약을 넣었는데 시간대 칸에 안 들어감」 — 새벽 1시에 넣으면 start 가 달력 날짜(10/3)인데
+          약의 하루는 아직 10/2 라 「아직 시작 안 한 약」 으로 빠졌습니다 (조용한 실패). start 로 거르지 않습니다.
+          새로 넣은 약에 지난 시각 알림이 가는 것은 서버가 created 로 막습니다 */
     .forEach(m => [...new Set(m.slots.map(x => SLOT_ALIAS[x] || x))].forEach(sl => { if (SLOTS.some(x => x[0] === sl)) out.push({ med: m, who, slot: sl, time: slotTime(sl), min: slotMin(sl), key: medKey(s, m.id, sl, who) }); }));
   const order = sl => SLOTS.findIndex(x => x[0] === sl);
   return out.sort((a, b) => order(a.slot) - order(b.slot) || (a.med.who === 'we' ? 0 : 1) - (b.med.who === 'we' ? 0 : 1) || (a.med.name < b.med.name ? -1 : 1));

@@ -38,6 +38,7 @@ eq([c.slotOf('07:00'),c.slotOf('13:00'),c.slotOf('22:00'),c.slotOf('00:30')],['�
 eq(c.medNow(new Date('2026-10-02T15:40:00Z')),{day:'2026-10-02',min:1480},'KST 00:40 은 아직 10/2 약 (24:40)');
 eq(c.medNow(new Date('2026-10-02T20:10:00Z')),{day:'2026-10-03',min:310},'KST 05:10 부터 10/3 약');
 eq(c.slotMin('자기 전'),1470,'자기 전 = 24:30');
+eq(c.medsFor([{id:'n',who:'me',slots:['자기 전'],name:'새 약',start:'2026-10-03'}],'me','2026-10-02').length,1,'새벽에 넣은 약도 그날(약의 하루) 칸에 나옴');
 // 매주 · 격주 · 매달
 eq(c.choreNext({lastDone:'2026-01-31',every:{type:'monthly'}}),'2026-02-28','매달 — 1/31 다음은 2/28');
 eq(c.choreNext({lastDone:'2026-12-15',every:{type:'monthly'}}),'2027-01-15','매달 — 해넘김');
