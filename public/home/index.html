@@ -255,11 +255,12 @@ body.phone .diaries{grid-template-columns:1fr}
 .diary.me{border-top:6px solid var(--me)}.diary.her{border-top:6px solid var(--her)}
 .dyh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.dyh b{font-size:15px}.dyh span{font-size:12.5px;color:#9a3412;font-weight:800}
 .dcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
-.dcal i{font-style:normal;position:relative;aspect-ratio:1;border-radius:7px;background:#ffffffb3;border:1px solid #eadfc9;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:2px;overflow:hidden}
+.dcal button.dc{all:unset}
+.dcal i,.dcal button.dc{box-sizing:border-box;cursor:default;font-style:normal;position:relative;aspect-ratio:1;border-radius:7px;background:#ffffffb3;border:1px solid #eadfc9;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:2px;overflow:hidden}
 .dcal i.h{background:none;border:0;aspect-ratio:auto;font-size:11px;font-weight:800;color:#8b7d68;justify-content:center}
 .dcal i.x{background:none;border:0}
-.dcal i em{font-style:normal;font-size:10.5px;color:#8b7d68;font-weight:700;align-self:flex-start;line-height:1}
-.dcal i.td{border:2px solid #f97316}
+.dcal .dc em{font-style:normal;font-size:10.5px;color:#8b7d68;font-weight:700;align-self:flex-start;line-height:1}
+.dcal .dc.td{border:2px solid #f97316}
 .dcal .ks{display:flex;gap:1px;flex-wrap:wrap;justify-content:center}
 .stamp{position:absolute;inset:8% 6%;border:2px solid #dc2626;border-radius:50%;color:#dc2626;font-size:clamp(7px,1.1vw,10.5px);font-weight:900;line-height:1.05;display:grid;place-items:center;text-align:center;transform:rotate(-14deg);opacity:.82;background:#fef2f2a6;letter-spacing:-.5px}
 .stamp.new{animation:stamp .5s cubic-bezier(.2,1.6,.4,1) both}
@@ -319,11 +320,11 @@ body.phone .sbl{font-size:13px}
 body.phone .fline{grid-template-columns:1fr auto;row-gap:6px}
 body.phone .fline .fd{grid-column:1}body.phone .fline .btn{grid-row:3}
 /* ── 💪 다이어리: 운동 이름 · 이모티콘 도장 · 두 번 도장 ── */
-.dcal i[data-act]{cursor:pointer}.dcal i[data-act]:hover{border-color:#f97316}
-.dcal i.fut{opacity:.55}
-.dcal i:not(.h):not(.x){aspect-ratio:auto;height:clamp(52px,7.4vw,84px)}
+.dcal .dc[data-act]{cursor:pointer}
+.dcal .dc.fut{opacity:.55}
+.dcal i.dc,.dcal button.dc{aspect-ratio:auto;height:clamp(52px,7.4vw,84px)}
 .dcal .pn{position:absolute;left:1px;right:1px;bottom:2px;font-size:clamp(8.5px,1vw,10.5px);line-height:1.15;color:#6b5e4b;font-weight:700;text-align:center;overflow:hidden;max-height:2.3em;z-index:2;text-shadow:0 0 3px #fff,0 0 3px #fff}
-.dcal i.ok .pn{color:#9a3412}
+.dcal .dc.ok .pn{color:#9a3412}
 .es{position:absolute;top:44%;left:50%;width:auto;height:58%;aspect-ratio:1;transform:translate(-50%,-58%) rotate(-12deg);border-radius:50%;border:2.5px solid var(--k);background:color-mix(in srgb,var(--k) 18%,#fff8);display:grid;place-items:center;font-size:clamp(14px,2.2vw,24px);opacity:.92;box-shadow:inset 0 0 0 2px #fff8}
 .es2{position:absolute;top:44%;left:50%;width:auto;height:70%;aspect-ratio:1;transform:translate(-50%,-56%) rotate(-10deg);border-radius:50%;
   background:radial-gradient(circle,#fde68a 0 45%,#f59e0b 46% 52%,#fde68a 53% 60%,#dc2626 61% 66%,transparent 67%);display:flex;flex-direction:column;align-items:center;justify-content:center;filter:drop-shadow(0 2px 3px #0005)}
@@ -465,10 +466,9 @@ function startLive() {
   const fail = e => { if (e.code === 'permission-denied') blocked(); else toast('⚠️ 연결이 끊겼습니다 — 다시 이어지면 저절로 맞춰집니다'); };
   let first = true;
   unsubs.push(F.onSnapshot(F.doc(db, 'homes', 'main'), s => {
-    D.members = (s.exists() && s.data().members) || {};
+    D.members = (s.exists() && s.data().members) || {}; D._loaded = true;
     const email = (USER.email || '').toLowerCase();
     ME = Object.keys(D.members).find(k => (D.members[k].email || '').toLowerCase() === email) || null;
-    if (first) { first = false; if (!ME) return whoAmI(); }
     render();
   }, fail));
   const since = { medLogs: C.addDays(today, -2), workLogs: C.addDays(today, -70) };
@@ -520,12 +520,15 @@ function blocked() {
   $('#out').onclick = () => FB.A.signOut(FB.auth);
 }
 function whoAmI() {
-  $('#app').innerHTML = `<div class="gate"><h1>👋 처음이네요</h1><p>${esc(USER.email)}<br>이 계정은 누구입니까? (한 번만 물어봅니다)</p>
-    <div style="display:flex;gap:10px"><button class="btn" style="background:var(--me)" data-who="me">나</button><button class="btn" style="background:var(--her)" data-who="her">여자친구</button></div></div>`;
+  const nm = w => esc((D.members[w] || {}).name || (w === 'me' ? '나' : '여자친구'));
+  const taken = w => (D.members[w] || {}).email;
+  $('#app').innerHTML = `<div class="gate" id="whoami"><h1>👋 누구신가요?</h1><p>${esc(USER.email)}<br>이 구글 계정은 누구 것입니까? (한 번만 물어봅니다)</p>
+    <div style="display:flex;gap:10px">${['me', 'her'].map(w => `<button class="btn" style="--c:var(--${w});background:color-mix(in srgb,var(--${w}) 70%,#000);min-width:120px" data-who="${w}" ${taken(w) ? 'disabled' : ''}>${w === 'me' ? '🙋‍♂️' : '🙋‍♀️'} ${nm(w)}${taken(w) ? '<br><small>이미 정해짐</small>' : ''}</button>`).join('')}</div>
+    <button class="btn sec sm" id="out" style="margin-top:12px">다른 계정으로 로그인</button></div>`;
+  $('#out').onclick = () => FB.A.signOut(FB.auth).then(() => location.reload());
   document.querySelectorAll('[data-who]').forEach(b => b.onclick = async () => {
-    const w = b.dataset.who, other = D.members[w];
-    if (other && other.email && other.email.toLowerCase() !== USER.email.toLowerCase()) return toast(`이미 ${other.email} 로 정해져 있습니다`);
-    await DB.putRoot({ members: { [w]: { name: w === 'me' ? '나' : '여자친구', ...(D.members[w] || {}), email: USER.email.toLowerCase() } } });
+    const w = b.dataset.who; b.disabled = true;
+    await DB.putRoot({ members: { [w]: { email: USER.email.toLowerCase() } } });   // 이름은 그대로 두고 메일만 더함
   });
 }
 
@@ -548,6 +551,7 @@ function badges() {
 }
 function shell() {
   if ($('#shell')) return;
+  lastHtml = '';
   $('#app').innerHTML = `<div class="shell" id="shell"><header class="hdr" id="hdr"></header><main id="main"></main><nav class="btm" id="btm"></nav></div>`;
 }
 function navHtml(cls) {
@@ -567,8 +571,14 @@ function hdrHtml() {
 let lastHtml = '';
 function render() {
   if (!DB) return;
+  /* 🔴 26-10-03 「아이폰은 냉장고·운동 터치가 안 먹힘 · 탭 시험 알림은 『우리집 계정이 아닙니다』」
+     첫 로그인의 「이 계정은 누구?」 화면이 곧바로 그려진 대시보드에 덮여 아무도 고르지 못했음
+     → 두 사람 메일이 저장되지 않아 폰은 「내 것」을 몰라 체크가 잠기고, 서버는 누구인지 몰랐음
+     → 메일이 정해질 때까지 대시보드를 그리지 않고 이 화면만 보여줌 */
+  if (!DEMO && USER && !ME && D._loaded) { if (!$('#whoami')) whoAmI(); return; }
   today = C.kst().date;
   shell(); layout(); 옛약옮기기();
+  if (!DEMO && pushOn() && (ME || isTab()) && ls.get('home-push-who', null) !== (isTab() ? 'tab' : ME) && !window.__resub) { window.__resub = 1; pushSubscribe(true); }   // ⚠️ 26-10-03 「누구」 없이 등록됐던 알림을 다시 붙임
   $('#hdr').innerHTML = hdrHtml();
   $('#btm').innerHTML = navHtml('bt');
   const R = { home: rHome, med: rMed, cal: rCal, fridge: rFridge, gym: rGym, chore: rChore, set: rSet }[cur] || rHome;
@@ -766,7 +776,8 @@ function diary(who) {
     const st = !did.length ? '' : did.length === 1
       ? `<b class="es ${nw}" style="--k:${kindOf(did[0])[2]}">${kindOf(did[0])[1]}</b>`
       : `<b class="es2 ${nw}"><span>${did.slice(0, 3).map(k => kindOf(k)[1]).join('')}</span><em>×${did.length}</em></b>`;
-    cells += `<i class="${s === today ? 'td' : ''} ${did.length ? 'ok' : ''} ${fut ? 'fut' : ''}" ${can && !fut ? `data-act="stampDay" data-who="${who}" data-day="${s}"` : ''}><em>${d}</em>${st}<span class="pn">${(did.length ? [...new Set(did)] : plan).slice(0, 2).map(esc).join('<br>')}</span></i>`;
+    const tag = can && !fut ? 'button' : 'i';   // ⚠️ 아이폰은 <i> 를 눌러도 click 이 안 생김 (26-10-03 WebKit 으로 확인) → 누를 수 있는 칸은 button
+    cells += `<${tag} ${tag === 'button' ? 'type="button"' : ''} class="dc ${s === today ? 'td' : ''} ${did.length ? 'ok' : ''} ${fut ? 'fut' : ''}" ${can && !fut ? `data-act="stampDay" data-who="${who}" data-day="${s}"` : ''}><em>${d}</em>${st}<span class="pn">${(did.length ? [...new Set(did)] : plan).slice(0, 2).map(esc).join('<br>')}</span></${tag}>`;
   }
   const n = new Set(Object.values(D.workLogs).filter(v => v.done && v.who === who && v.date && v.date.slice(0, 7) === today.slice(0, 7)).map(v => v.date)).size;
   return `<section class="diary ${who}"><div class="dyh"><b>${who === 'me' ? '🙋‍♂️' : '🙋‍♀️'} ${이름(who)}의 ${m}월 운동 일기</b><span>도장 ${n}개</span></div><div class="dcal">${cells}</div>${can ? '<div class="dyf">날짜를 누르면 도장 · 하루 두 번이면 특별 도장 ✨</div>' : ''}</section>`;
@@ -1075,13 +1086,29 @@ document.addEventListener('input', e => {
   if (k === 'date' && sheetKind === 'ev') return drawSheet();
   refreshSaveBtn();
 });
+/* 📱 아이폰 안전망 (26-10-03) — 아이폰(WebKit)은 버튼이 아닌 줄·칸·이름을 눌러도 click 이 안 생길 때가 있음
+   (사장님: 「아이폰들이 냉장고·운동 터치가 안 먹힘」 · WebKit 으로 줄·칸·이름 전부 재현)
+   → 손가락을 뗐는데 0.4초 안에 click 이 안 오면 우리가 click 을 대신 보냄. 진짜 click 이 오면 아무것도 안 함 (두 번 안 눌림)
+   ⚠️ 끌어서 움직였으면(스크롤) 누른 것으로 치지 않음 */
+let tapStart = null;
+document.addEventListener('touchstart', e => { const t = e.touches[0]; tapStart = t ? { x: t.clientX, y: t.clientY, el: e.target } : null; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const st = tapStart; tapStart = null; const t = e.changedTouches[0]; if (!st || !t) return;
+  if (Math.abs(t.clientX - st.x) > 10 || Math.abs(t.clientY - st.y) > 10) return;
+  const el = st.el && st.el.nodeType === 1 ? st.el : st.el && st.el.parentElement; if (!el) return;
+  if (el.closest('button,input,select,textarea,label,a')) return;                 // 버튼은 원래 잘 됨
+  if (!el.closest('[data-act],[data-go],[data-f],[data-ftog],#ov,#night')) return;
+  let got = false; const mark = () => { got = true; };
+  document.addEventListener('click', mark, { capture: true, once: true });
+  setTimeout(() => { document.removeEventListener('click', mark, true); if (!got) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); }, 400);
+}, { passive: true });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); if (e.key === 'Enter' && e.target.id === 'chName') { e.preventDefault(); $('[data-act="cfSave"]').click(); return; }
   });
 
 /* ═════════════ 🔔 알림 받기 ═════════════ */
 const pushOn = () => ls.get('home-push', false);
-async function pushSubscribe() {
-  if (DEMO) return toast('미리보기에서는 알림을 안 켭니다');
+async function pushSubscribe(quiet) {
+  if (DEMO) return quiet ? 0 : toast('미리보기에서는 알림을 안 켭니다');
   try {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') return toast('⚠️ 알림이 막혀 있습니다. 브라우저 설정에서 허용해 주세요');
@@ -1092,8 +1119,8 @@ async function pushSubscribe() {
     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(raw, c => c.charCodeAt(0)) });
     const s = JSON.stringify(sub), h = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sub.endpoint)))].slice(0, 12).map(x => x.toString(16).padStart(2, '0')).join('');
     await DB.put('subs', h, { who: isTab() ? 'tab' : ME, sub: s, ua: navigator.userAgent.slice(0, 120), at: Date.now(), off: false });
-    ls.set('home-push', true); render(); toast('🔔 알림을 켰습니다');
-  } catch (e) { toast('⚠️ 알림 켜기 실패: ' + e.message); }
+    ls.set('home-push', true); ls.set('home-push-who', isTab() ? 'tab' : ME); render(); if (!quiet) toast('🔔 알림을 켰습니다');
+  } catch (e) { if (!quiet) toast('⚠️ 알림 켜기 실패: ' + e.message); }
 }
 
 /* ═════════════ 🖥 거실 탭: 화면 켜짐 · 밤 화면 ═════════════ */
