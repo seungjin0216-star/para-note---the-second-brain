@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>우리집</title>
 <link rel="manifest" href="/home/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="/home/icon.svg">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -366,6 +367,29 @@ body.phone #toast{left:50%;right:auto;transform:translateX(-50%);bottom:calc(80p
 /* ── 로그인 ── */
 .gate{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
 .gate h1{font-size:30px;font-weight:800}.gate p{color:var(--muted);font-size:15px;max-width:340px;line-height:1.6}
+/* ── ✉️ 어명 (26-10-06) — 「카카오톡 생일 축하처럼 폭죽 + 알림 내용 · 느낌은 마치 어명처럼」 ── */
+#eo{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse at center,#3b0d0d 0%,#0b0607 70%);opacity:0;transition:opacity .35s;padding:16px}
+#eo.show{opacity:1}
+#eo canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#eo .cry{font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:clamp(40px,12vw,72px);color:#facc15;letter-spacing:.12em;text-shadow:0 0 18px #f59e0b,0 4px 0 #7c2d12;transform:scale(3);opacity:0;animation:eoCry .55s cubic-bezier(.2,1.6,.4,1) .25s forwards;position:relative;z-index:2;margin-bottom:14px}
+@keyframes eoCry{to{transform:scale(1);opacity:1}}
+#eo .scroll{position:relative;z-index:2;width:min(420px,100%);display:flex;flex-direction:column;align-items:center}
+#eo .rod{width:calc(100% + 24px);height:20px;border-radius:10px;background:linear-gradient(#7c2d12,#b45309 45%,#78350f);box-shadow:0 3px 8px #0009;position:relative;z-index:2}
+#eo .rod::before,#eo .rod::after{content:'';position:absolute;top:-3px;width:14px;height:26px;border-radius:6px;background:#facc15;box-shadow:inset 0 -3px #a16207}
+#eo .rod::before{left:-8px}#eo .rod::after{right:-8px}
+#eo .paper{width:100%;max-height:0;overflow:hidden;background:linear-gradient(90deg,#e8d3a3,#f6e7c1 15%,#f6e7c1 85%,#e8d3a3);animation:eoOpen 1s ease-out .85s forwards;position:relative}
+@keyframes eoOpen{to{max-height:70vh}}
+#eo .in{padding:22px 22px 78px;font-family:'Nanum Myeongjo',serif;color:#3b1d0b;text-align:center;position:relative}
+#eo .from{font-size:14px;letter-spacing:.08em;color:#7c2d12;border-bottom:1px solid #7c2d1255;padding-bottom:10px;margin-bottom:14px}
+#eo .txt{font-size:clamp(20px,5.6vw,26px);font-weight:800;line-height:1.55;word-break:keep-all;white-space:pre-wrap;min-height:60px}
+#eo .when{margin-top:16px;font-size:12px;color:#7c2d12aa;text-align:left}
+#eo .seal{position:absolute;right:14px;bottom:12px;width:62px;height:62px;border:3px solid #b91c1c;border-radius:8px;color:#b91c1c;font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:20px;line-height:1.05;display:flex;align-items:center;justify-content:center;text-align:center;transform:scale(2.6) rotate(-14deg);opacity:0;animation:eoSeal .35s cubic-bezier(.3,1.7,.5,1) 2s forwards;background:#b91c1c14}
+@keyframes eoSeal{to{transform:scale(1) rotate(-14deg);opacity:.92}}
+#eo .ok{position:relative;z-index:2;margin-top:22px;background:#b91c1c;color:#fff7ed;border:2px solid #facc15;border-radius:999px;padding:13px 30px;font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:18px;opacity:0;animation:eoFade .4s ease 2.4s forwards;cursor:pointer}
+@keyframes eoFade{to{opacity:1}}
+#eo.shake{animation:eoShake .4s ease 2s}
+@keyframes eoShake{0%,100%{transform:none}25%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,1px)}}
+@media (prefers-reduced-motion:reduce){#eo .cry,#eo .paper,#eo .seal,#eo .ok{animation-duration:.01s;animation-delay:0s}}
 </style>
 </head>
 <body>
@@ -388,8 +412,8 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 
 /* ═════════════ 데이터 ═════════════ */
-const COLS = ['meds', 'medLogs', 'events', 'food', 'routines', 'workLogs', 'chores'];
-const D = { members: {}, meds: {}, medLogs: {}, events: {}, food: {}, routines: {}, workLogs: {}, chores: {}, choreLogs: {}, subs: {} };   // choreLogs·subs 는 쓰기만 (화면은 안 읽음)
+const COLS = ['meds', 'medLogs', 'events', 'food', 'routines', 'workLogs', 'chores', 'msgs'];   // msgs = ✉️ 어명 (26-10-06)
+const D = { members: {}, meds: {}, medLogs: {}, events: {}, food: {}, routines: {}, workLogs: {}, chores: {}, choreLogs: {}, subs: {}, msgs: {} };   // choreLogs·subs 는 쓰기만 (화면은 안 읽음)
 let ME = null;            // 이 폰 주인 'me' | 'her'
 let USER = null;          // 로그인 정보
 let ROLE = ls.get('home-role', null);   // 'tab' = 거실 탭(둘 다 체크) · 'phone'
@@ -476,7 +500,7 @@ function startLive() {
     ME = Object.keys(D.members).find(k => (D.members[k].email || '').toLowerCase() === email) || null;
     render();
   }, fail));
-  const since = { medLogs: C.addDays(today, -2), workLogs: C.addDays(today, -70) };
+  const since = { medLogs: C.addDays(today, -2), workLogs: C.addDays(today, -70), msgs: C.addDays(today, -7) };
   COLS.forEach(n => {
     const q = since[n] ? F.query(col(n), F.where('date', '>=', since[n])) : col(n);
     unsubs.push(F.onSnapshot(q, s => { const o = {}; s.forEach(d => { o[d.id] = { id: d.id, ...d.data() }; }); D[n] = o; schedule(); }, fail));
@@ -591,6 +615,56 @@ function render() {
   const { body, fit } = R();
   const main = $('#main'); main.classList.toggle('fit', !!fit && document.body.classList.contains('tabL'));
   if (body !== lastHtml) { const y = main.scrollTop; main.innerHTML = body; main.scrollTop = y; lastHtml = body; }
+  어명확인();
+}
+/* ═════════════ ✉️ 어명 (26-10-06) ═════════════
+   사장님: 「알림을 누르니까 알림 내용이 안 보이고 웹앱으로 가지네 … 알림 메세지가 중앙에 뜨게끔」
+           「카카오톡 생일날 … 폭죽 터지고 하는 것처럼 이벤트 + 알림 내용 · 느낌은 마치 어명처럼」
+   ⚠️ 알림을 눌러서 오든 그냥 앱을 열든 같음 — 안 읽은 msgs(to = 나)가 있으면 띄우고 「받들겠사옵니다」에 read:true
+   ⚠️ 탭에는 안 띄움 (박나은 폰에만) · 여러 통이면 오래된 것부터 하나씩 */
+let 어명중 = null;
+function 어명확인() {
+  if (어명중 || isTab() || !ME) return;
+  const m = Object.values(D.msgs || {}).filter(x => x.to === ME && !x.read).sort((a, b) => (a.at || 0) - (b.at || 0))[0];
+  if (m) 어명띄우기(m);
+}
+function 어명띄우기(m) {
+  어명중 = m.id;
+  const at = new Date(m.at || Date.now()), k = C.kst();
+  const 때 = `${at.getMonth() + 1}월 ${at.getDate()}일 ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
+  const el = document.createElement('div'); el.id = 'eo';
+  el.innerHTML = `<canvas></canvas><div class="cry">어명이오!</div>
+    <div class="scroll"><div class="rod"></div><div class="paper"><div class="in">
+      <div class="from">${esc(이름(m.from || 'me'))} 전하께서 이르시길</div>
+      <div class="txt">${esc(m.text || '')}</div>
+      <div class="when">${때}</div>
+      <div class="seal">御<br>命</div></div></div><div class="rod"></div></div>
+    <button class="ok" data-eo="${esc(m.id)}">받들겠사옵니다</button>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => { el.classList.add('show', 'shake'); });
+  if (navigator.vibrate) try { navigator.vibrate([60, 40, 120]); } catch (_) {}
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) 폭죽(el.querySelector('canvas'));
+  el.querySelector('.ok').addEventListener('click', async () => {
+    el.classList.remove('show'); setTimeout(() => el.remove(), 380);
+    await DB.put('msgs', m.id, { read: true, readAt: Date.now() });
+    D.msgs[m.id] = { ...m, read: true };
+    어명중 = null; setTimeout(어명확인, 500);
+  });
+}
+function 폭죽(cv) {
+  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  const 색 = ['#facc15', '#fde047', '#f59e0b', '#ef4444', '#fb7185', '#fff7ed'], P = [];
+  const 터짐 = (x, y, n) => { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 5; P.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1, life: 60 + Math.random() * 40, c: 색[i % 색.length], r: 1.5 + Math.random() * 2.5 }); } };
+  const 일정 = [[0, .5, .3, 90], [350, .2, .22, 70], [600, .8, .25, 70], [1900, .5, .55, 120], [2300, .25, .45, 60], [2500, .75, .45, 60]];
+  일정.forEach(([t, x, y, n]) => setTimeout(() => 터짐(W * x, H * y, n), t));
+  const t0 = performance.now();
+  (function loop(now) {
+    g.clearRect(0, 0, W, H);
+    for (const p of P) { if (p.life <= 0) continue; p.x += p.vx; p.y += p.vy; p.vy += .07; p.vx *= .985; p.life--; g.globalAlpha = Math.min(1, p.life / 40); g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
+    if (now - t0 < 5000 && cv.isConnected) requestAnimationFrame(loop);
+    else g.clearRect(0, 0, W, H);
+  })(t0);
 }
 function go(k) { cur = k; ls.set('home-cur', k); lastHtml = ''; render(); $('#main').scrollTop = 0; }
 /* 화면 머리 — 큰 제목 · 설명 · 오른쪽 버튼 */
@@ -935,7 +1009,8 @@ function drawSheet() {
        ⚠️ 버튼은 장승진 폰(ME==='me')에만 · 탭에는 안 띄움 · 서버(home-api a:'msg')도 me 가 아니면 거절 */
     h = `<h2>✉️ ${이름('her')}에게 알림</h2>
       <textarea class="field" data-in="text" rows="3" maxlength="120" placeholder="예: 오늘 늦어요 · 저녁 뭐 먹을래?" style="resize:none">${esc(F.text || '')}</textarea>
-      <p class="hint" style="margin:6px 2px 0;font-size:12px;color:var(--muted)">${이름('her')} 폰에 바로 알림이 갑니다 (120자까지)</p>
+      <p class="hint" style="margin:6px 2px 0;font-size:12px;color:var(--muted)">${이름('her')} 폰에 바로 알림이 가고, 앱을 열면 📜 어명으로 뜹니다 (120자까지)</p>
+      ${(() => { const l = Object.values(D.msgs || {}).filter(x => x.from === 'me').sort((a, b) => (b.at || 0) - (a.at || 0))[0]; return l ? `<p class="hint" style="margin:4px 2px 0;font-size:12px;color:var(--muted)">지난 어명 「${esc(String(l.text).slice(0, 18))}」 — ${l.read ? '✅ 받듦' : '⏳ 아직 안 봄'}</p>` : ''; })()}
       <div class="row2"><button class="btn" data-act="msgSend">보내기</button></div>`;
   } else if (sheetKind === 'rename') {
     h = `<h2>이름 바꾸기</h2><input class="field" data-in="name" value="${esc(F.name)}"><div class="row2"><button class="btn" data-act="renameSave">저장</button></div>`;
@@ -991,6 +1066,7 @@ document.addEventListener('click', async e => {
     case 'msgNew': return openSheet('msg', { text: '' });
     case 'msgSend': { const text = (F.text || '').trim(); if (!text) return toast('보낼 말을 적어 주세요');
       b.disabled = true; b.textContent = '보내는 중…';
+      if (DEMO) { const at = Date.now(); await DB.put('msgs', 'm' + at, { from: 'me', to: 'her', text, at, date: today, read: false }); closeSheet(); return toast('[미리보기] 어명 저장 — 「그녀」로 바꾸면 뜹니다'); }
       const r = await api({ a: 'msg', text });
       if (r.ok && r.sent) { closeSheet(); return toast(`✉️ ${이름('her')}에게 보냈습니다`); }
       b.disabled = false; b.textContent = '보내기';

@@ -53,8 +53,10 @@ export default async (req) => {
       if (who !== 'me') return J({ ok: false, error: '보낼 수 없는 계정입니다' }, 403);
       const text = String(body.text || '').trim().slice(0, 120);
       if (!text) return J({ ok: false, error: '보낼 말이 없습니다' }, 400);
-      const m = await members(db);
-      const r = await push(db, ['her'], `✉️ ${nameOf(m, 'me')}`, text, `msg-${Date.now()}`);
+      const m = await members(db), at = Date.now(), id = `m${at}`;
+      // 📜 앱이 열리면 가운데 「어명」으로 띄우려고 남겨 둡니다 (26-10-06 · 화면이 read:true 로 바꿈)
+      await db.doc(`${HOME}/msgs/${id}`).set({ from: 'me', to: 'her', text, at, date: kst().date, read: false });
+      const r = await push(db, ['her'], `📜 어명이오! — ${nameOf(m, 'me')}`, text, `msg-${at}`);
       return J({ ok: true, ...r });
     }
     if (body.a === 'test') {
