@@ -49,6 +49,14 @@ export default async (req) => {
       const r = await push(db, [to], `💊 ${nameOf(m, who)}: 약 먹어요!`, String(body.text || '').slice(0, 120) || '아직 안 먹은 약이 있어요', `poke-${to}`);
       return J({ ok: true, ...r });
     }
+    if (body.a === 'msg') {    // ✉️ 26-10-06 「장승진만 쓸 수 있는 것으로 … 박나은 폰에 알림」 — 보내는 사람은 me 만, 받는 사람은 her 만
+      if (who !== 'me') return J({ ok: false, error: '보낼 수 없는 계정입니다' }, 403);
+      const text = String(body.text || '').trim().slice(0, 120);
+      if (!text) return J({ ok: false, error: '보낼 말이 없습니다' }, 400);
+      const m = await members(db);
+      const r = await push(db, ['her'], `✉️ ${nameOf(m, 'me')}`, text, `msg-${Date.now()}`);
+      return J({ ok: true, ...r });
+    }
     if (body.a === 'test') {
       const r = await push(db, [body.to || who], '🔔 우리집 알림 시험', '이게 보이면 알림이 잘 옵니다', 'test');
       return J({ ok: true, ...r });

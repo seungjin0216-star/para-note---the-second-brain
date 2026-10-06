@@ -569,6 +569,7 @@ function hdrHtml() {
     <nav class="tnav">${navHtml('tn')}</nav>
     <div class="hr">
       <div class="clk"><b class="num">${k.time}</b><small>${긴날짜(today)}</small></div>
+      ${ME === 'me' && !isTab() ? `<button class="ib" data-act="msgNew" title="${이름('her')}에게 알림 보내기">✉️</button>` : ''}
       <button class="ib" data-act="ambient" title="탁상 시계">🖥</button>
       <button class="ib ${cur === 'set' ? 'on' : ''}" data-go="set" title="설정">⚙️</button>
     </div>`;
@@ -929,6 +930,13 @@ function drawSheet() {
       <div class="kpick" style="margin-top:12px">${KINDS.map(([n]) => `<button class="${plan.includes(n) ? 'on' : ''}" data-act="stampKind" data-v="${n}">${kbadge(n, 'lg')}<span>${n}</span></button>`).join('')}</div>
       ${have.length ? `<div class="lbl">찍힌 도장 — 잘못 찍었으면 빼기</div><div class="card">${have.map(x => `<div class="it">${kbadge(x.kind)}<span class="m"><b>${esc(x.kind)}</b><small>${x.v.adhoc ? '도장' : '정기 운동 체크'}</small></span><button class="btn sec sm" data-act="stampOff" data-key="${x.k}">빼기</button></div>`).join('')}</div>` : ''}
       <div class="row2"><button class="btn sec" data-act="close">닫기</button></div>`;
+  } else if (sheetKind === 'msg') {
+    /* ✉️ 26-10-06 사장님: 「알림보내기인데, 장승진만 쓸 수 있는 것으로 … 글 써서 알림 보내기 하면 박나은 폰에 알림 가게끔」
+       ⚠️ 버튼은 장승진 폰(ME==='me')에만 · 탭에는 안 띄움 · 서버(home-api a:'msg')도 me 가 아니면 거절 */
+    h = `<h2>✉️ ${이름('her')}에게 알림</h2>
+      <textarea class="field" data-in="text" rows="3" maxlength="120" placeholder="예: 오늘 늦어요 · 저녁 뭐 먹을래?" style="resize:none">${esc(F.text || '')}</textarea>
+      <p class="hint" style="margin:6px 2px 0;font-size:12px;color:var(--muted)">${이름('her')} 폰에 바로 알림이 갑니다 (120자까지)</p>
+      <div class="row2"><button class="btn" data-act="msgSend">보내기</button></div>`;
   } else if (sheetKind === 'rename') {
     h = `<h2>이름 바꾸기</h2><input class="field" data-in="name" value="${esc(F.name)}"><div class="row2"><button class="btn" data-act="renameSave">저장</button></div>`;
   }
@@ -980,6 +988,13 @@ document.addEventListener('click', async e => {
       const xs = mySets(w).filter(x => !taken(x.key) && x.min <= C.medNow().min);
       const r = await api({ a: 'poke', to: w, text: xs.map(x => `${x.slot} ${x.med.name}`).join(', ') });
       toast(r.ok ? `🔔 ${이름(w)}에게 보냈습니다` : '⚠️ 못 보냈습니다: ' + (r.error || '')); return; }
+    case 'msgNew': return openSheet('msg', { text: '' });
+    case 'msgSend': { const text = (F.text || '').trim(); if (!text) return toast('보낼 말을 적어 주세요');
+      b.disabled = true; b.textContent = '보내는 중…';
+      const r = await api({ a: 'msg', text });
+      if (r.ok && r.sent) { closeSheet(); return toast(`✉️ ${이름('her')}에게 보냈습니다`); }
+      b.disabled = false; b.textContent = '보내기';
+      return toast(r.ok ? `⚠️ ${이름('her')} 폰에 알림이 안 켜져 있어요` : '⚠️ 못 보냈습니다: ' + (r.error || '')); }
     case 'medNew': return openSheet('med', { name: '', who: isTab() ? 'we' : (ME || 'we'), slots: [지금시간대()], memo: '' });
     case 'medEdit': { const m = D.meds[id]; return openSheet('med', { ...m, slots: [...new Set((m.slots || []).map(x => C.SLOT_ALIAS[x] || x))] }); }
     case 'medSave': { const name = (F.name || '').trim(); if (!name) return toast('약 이름을 적어 주세요'); if (!(F.slots || []).length) return toast('아침·점심·저녁 중 하나는 골라 주세요');
