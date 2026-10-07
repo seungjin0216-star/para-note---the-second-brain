@@ -389,6 +389,18 @@ body.phone #toast{left:50%;right:auto;transform:translateX(-50%);bottom:calc(80p
 @keyframes eoFade{to{opacity:1}}
 #eo.shake{animation:eoShake .4s ease 2s}
 @keyframes eoShake{0%,100%{transform:none}25%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,1px)}}
+#eo .eobtns{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px}
+#eo .no{background:none;border:0;color:#fca5a5aa;font-family:'Nanum Myeongjo',serif;font-size:14px;padding:8px 14px;opacity:0;animation:eoFade .4s ease 2.8s forwards;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+#eo .claps{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:3}
+#eo .claps i{position:absolute;bottom:-50px;font-style:normal;animation:eoClap 1.6s cubic-bezier(.2,.7,.4,1) forwards}
+@keyframes eoClap{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translateY(-95vh) scale(1.1) rotate(20deg);opacity:0}}
+#eo .hail{position:absolute;z-index:4;top:9%;left:0;right:0;text-align:center;font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:clamp(28px,8vw,44px);color:#fde047;text-shadow:0 0 16px #f59e0b,0 3px 0 #7c2d12;animation:eoCry .5s cubic-bezier(.2,1.6,.4,1) forwards;transform:scale(3);opacity:0}
+#eo .dog{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center}
+#eo .dog img{width:min(300px,72vw);aspect-ratio:1;object-fit:cover;border-radius:50%;border:6px solid #facc15;box-shadow:0 0 0 3px #7c2d12,0 0 60px #f59e0b88;filter:blur(26px) grayscale(.4);opacity:0;transform:scale(1.12);animation:eoDog 2.6s ease-out forwards}
+@keyframes eoDog{to{filter:blur(0) grayscale(0);opacity:1;transform:scale(1)}}
+#eo .dog .crown{font-size:54px;margin-bottom:-26px;position:relative;z-index:3;opacity:0;animation:eoFade .5s ease 2.4s forwards;filter:drop-shadow(0 4px 6px #0008)}
+#eo .dog .say{margin-top:22px;font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:clamp(24px,7vw,34px);line-height:1.4;color:#fde68a;text-shadow:0 2px 0 #7c2d12;opacity:0;animation:eoFade .5s ease 2.6s forwards}
+#eo .dog .again{animation-delay:3.3s}
 @media (prefers-reduced-motion:reduce){#eo .cry,#eo .paper,#eo .seal,#eo .ok{animation-duration:.01s;animation-delay:0s}}
 </style>
 </head>
@@ -639,17 +651,50 @@ function 어명띄우기(m) {
       <div class="txt">${esc(m.text || '')}</div>
       <div class="when">${때}</div>
       <div class="seal">御<br>命</div></div></div><div class="rod"></div></div>
-    <button class="ok" data-eo="${esc(m.id)}">받들겠사옵니다</button>`;
+    <div class="eobtns"><button class="ok">받들겠사옵니다</button><button class="no">거역하겠사옵니다</button></div>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => { el.classList.add('show', 'shake'); });
   if (navigator.vibrate) try { navigator.vibrate([60, 40, 120]); } catch (_) {}
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) 폭죽(el.querySelector('canvas'));
+  /* 👏 26-10-07 「받아들이면 박수가 터져 나오는 것으로」 → 박수 소리 + 👏 비 뒤에 닫힘 */
   el.querySelector('.ok').addEventListener('click', async () => {
+    el.querySelectorAll('.eobtns button').forEach(x => x.disabled = true);
+    박수(el); await new Promise(r => setTimeout(r, 2600));
     el.classList.remove('show'); setTimeout(() => el.remove(), 380);
     await DB.put('msgs', m.id, { read: true, readAt: Date.now() });
     D.msgs[m.id] = { ...m, read: true };
     어명중 = null; setTimeout(어명확인, 500);
   });
+  /* 🐶 26-10-07 「거절을 누른다면 이 강아지가 근엄한 포즈로 사르르 나옴 (흐릿하다가 뚜렷해지는 효과)
+        딱 뚜렷해질 때 『좋은 말 할 때 다시 기회 준다』 하고 다시 어명 열기 버튼 … 그렇게 무한으로」
+     ⚠️ 거절은 읽음으로 안 바꿉니다 — 받들 때까지 앱을 열 때마다 다시 뜸 */
+  el.querySelector('.no').addEventListener('click', () => {
+    el.innerHTML = `<div class="dog"><div class="crown">👑</div><img src="dog.jpg" alt=""><div class="say">좋은 말 할 때<br>다시 기회 준다.</div><button class="ok again">📜 어명 다시 열기</button></div>`;
+    if (navigator.vibrate) try { navigator.vibrate(200); } catch (_) {}
+    el.querySelector('.again').addEventListener('click', () => { el.remove(); 어명띄우기(m); });
+  });
+}
+function 박수(el) {
+  // 소리 — 짧은 잡음을 수백 번 (파일 없이). ⚠️ 아이폰은 누른 순간에만 소리를 허락해서 버튼 안에서 만듭니다
+  try {
+    const A = new (window.AudioContext || window.webkitAudioContext)(), sr = A.sampleRate;
+    const buf = A.createBuffer(1, sr * 0.03, sr), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 4);
+    for (let i = 0; i < 260; i++) {
+      const t = Math.pow(Math.random(), 1.6) * 2.6, src = A.createBufferSource(), f = A.createBiquadFilter(), g = A.createGain();
+      src.buffer = buf; f.type = 'bandpass'; f.frequency.value = 900 + Math.random() * 1800; f.Q.value = 1.2;
+      g.gain.value = (0.25 + Math.random() * 0.5) * (t < 0.3 ? t / 0.3 : Math.max(0, 1 - (t - 0.3) / 2.4));
+      src.connect(f).connect(g).connect(A.destination); src.start(A.currentTime + t);
+    }
+    setTimeout(() => A.close(), 3500);
+  } catch (_) {}
+  // 화면 — 👏 이 아래에서 솟구침
+  const box = document.createElement('div'); box.className = 'claps'; el.appendChild(box);
+  for (let i = 0; i < 34; i++) { const c = document.createElement('i'); c.textContent = ['👏', '👏', '🎉', '✨'][i % 4];
+    c.style.left = Math.random() * 100 + '%'; c.style.animationDelay = (Math.random() * 1.2) + 's'; c.style.fontSize = (22 + Math.random() * 22) + 'px'; box.appendChild(c); }
+  const cry = el.querySelector('.cry'); if (cry) cry.style.visibility = 'hidden';   // 「어명이오!」 자리에 「성은이 망극하옵니다!」
+  const t = document.createElement('div'); t.className = 'hail'; t.textContent = '성은이 망극하옵니다!'; el.appendChild(t);
+  if (navigator.vibrate) try { navigator.vibrate([30, 40, 30, 40, 30]); } catch (_) {}
 }
 function 폭죽(cv) {
   const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr;
