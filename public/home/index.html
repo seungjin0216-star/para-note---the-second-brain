@@ -1080,6 +1080,9 @@ function refreshSaveBtn() { return; const b = $('#sheet [data-act$="Save"]'); if
 let tt; function toast(t, undo) { const el = $('#toast'); el.innerHTML = esc(t) + (undo ? ' <button id="undo">되돌리기</button>' : ''); el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), undo ? 5000 : 2200); if (undo) $('#undo').onclick = () => { el.classList.remove('show'); undo(); }; }
 const by = w => isTab() ? 'tab' : (ME || w);
 async function token() { return DEMO ? '' : FB.auth.currentUser.getIdToken(); }
+/* 🔔 26-10-09 사장님(제2의뇌 7): 「우리집-할일등록시 알림오게끔」
+   새 할 일·새 일정을 넣으면 상대 폰에 (탭에서 넣으면 둘 다). 고치기·체크는 안 보냄 — 알림 피로 */
+function 새것알림(title, text) { api({ a: 'added', title, text, from: isTab() ? 'tab' : (ME || '') }).catch(() => {}); }
 async function api(body) {
   if (DEMO) { console.log('[미리보기] 알림 안 보냄', body); return { ok: true }; }
   try { const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, token: await token() }) }); return await r.json(); }
@@ -1146,6 +1149,7 @@ document.addEventListener('click', async e => {
       if (r.type === 'weekly' && !(r.days && r.days.length)) r.days = [C.wdOf(F.date)];
       if (r.type === 'everyN') r.n = Math.max(1, +r.n || 3);
       await DB.put('events', nid, { title: F.title.trim(), who: F.who, date: F.date, time: F.time || '', repeat: r, until: r.type === 'none' ? '' : (F.until || '') });
+      if (!F.id) 새것알림('📅 새 일정', `${C.label(F.date)}${F.time ? ' ' + F.time : ''} ${F.title.trim()}${r.type !== 'none' ? ' · ' + repText(r) : ''}`);
       closeSheet(); return toast('📅 저장했습니다'); }
     case 'evSkip': { const ev = D.events[F.id]; await DB.put('events', F.id, { skip: [...(ev.skip || []), F._day] }); closeSheet(); return toast(`${C.label(F._day)} 만 뺐습니다`); }
     case 'evOff': { const ev = D.events[F.id], rep = ev.repeat && ev.repeat.type !== 'none';
@@ -1206,10 +1210,10 @@ document.addEventListener('click', async e => {
     case 'cfSave': { CF.name = ($('#chName').value || '').trim(); if (!CF.name) return toast('할 일 이름을 적어 주세요');
       const once = CF.type === '비정기', cy = CYCLES.find(x => x[0] === CF.cycle) || CYCLES[0];
       await DB.put('chores', uid(), { name: CF.name, who: 'any', ...(once ? { once: true } : { every: cy[2] }), start: today, created: today });
-      const n = CF.name; CF.name = ''; lastHtml = ''; render(); return toast(`🧹 「${n}」 등록 — ${once ? '비정기' : cy[1]}`); }
+      const n = CF.name; CF.name = ''; lastHtml = ''; render(); 새것알림('🧹 새 할 일', `${n} · ${once ? '비정기' : cy[1]}`); return toast(`🧹 「${n}」 등록 — ${once ? '비정기' : cy[1]}`); }
     case 'chQuick': { const v = ($('#choreQuick').value || '').trim(); if (!v) return;
       await DB.put('chores', uid(), { name: v, who: isTab() ? 'any' : (ME || 'any'), once: true, created: today, start: today });
-      return toast(`🧹 「${v}」 넣었습니다 — 하면 체크`); }
+      새것알림('🧹 새 할 일', v); return toast(`🧹 「${v}」 넣었습니다 — 하면 체크`); }
     case 'chNew': go('chore'); setTimeout(() => $('#chName') && $('#chName').focus(), 50); return;
     case 'chEdit': return openSheet('ch', D.chores[id]);
     case 'chCycle': F.every = (CYCLES.find(x => x[0] === b.dataset.v) || CYCLES[0])[2]; return drawSheet();
