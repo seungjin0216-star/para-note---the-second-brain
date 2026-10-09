@@ -382,6 +382,10 @@ body.phone #toast{left:50%;right:auto;transform:translateX(-50%);bottom:calc(80p
 #eo .in{padding:22px 22px 78px;font-family:'Nanum Myeongjo',serif;color:#3b1d0b;text-align:center;position:relative}
 #eo .from{font-size:14px;letter-spacing:.08em;color:#7c2d12;border-bottom:1px solid #7c2d1255;padding-bottom:10px;margin-bottom:14px}
 #eo .txt{font-size:clamp(20px,5.6vw,26px);font-weight:800;line-height:1.55;word-break:keep-all;white-space:pre-wrap;min-height:60px}
+#eo .txts{max-height:42vh;overflow:auto;text-align:left;display:flex;flex-direction:column;gap:10px}
+#eo .txt.sm{font-size:clamp(16px,4.6vw,20px);min-height:0;display:block;padding-left:30px;position:relative}
+#eo .txt.sm .no{position:absolute;left:0;top:1px;color:#b91c1c;font-size:15px}
+#eo .txt.sm small{display:block;font-size:11px;font-weight:700;color:#7c2d12aa;margin-top:2px}
 #eo .when{margin-top:16px;font-size:12px;color:#7c2d12aa;text-align:left}
 #eo .seal{position:absolute;right:14px;bottom:12px;width:62px;height:62px;border:3px solid #b91c1c;border-radius:8px;color:#b91c1c;font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:20px;line-height:1.05;display:flex;align-items:center;justify-content:center;text-align:center;transform:scale(2.6) rotate(-14deg);opacity:0;animation:eoSeal .35s cubic-bezier(.3,1.7,.5,1) 2s forwards;background:#b91c1c14}
 @keyframes eoSeal{to{transform:scale(1) rotate(-14deg);opacity:.92}}
@@ -637,18 +641,22 @@ function render() {
 let 어명중 = null;
 function 어명확인() {
   if (어명중 || isTab() || !ME) return;
-  const m = Object.values(D.msgs || {}).filter(x => x.to === ME && !x.read).sort((a, b) => (a.at || 0) - (b.at || 0))[0];
-  if (m) 어명띄우기(m);
+  /* ⚠️ 26-10-09 사장님: 「알림이 안 울림(어명) 그러니까 계속 쌓임」
+     → 쌓인 것을 하나씩 폭죽 돌리면 열 번을 봐야 함. 안 읽은 것을 **한 두루마리에 전부** · 받들기 한 번에 전부 읽음 */
+  const ms = Object.values(D.msgs || {}).filter(x => x.to === ME && !x.read).sort((a, b) => (a.at || 0) - (b.at || 0));
+  if (ms.length) 어명띄우기(ms);
 }
-function 어명띄우기(m) {
+function 어명띄우기(ms) {
+  if (!Array.isArray(ms)) ms = [ms];
+  const m = ms[ms.length - 1];   // 맨 위 「언제」·보낸 사람은 가장 최근 것
   어명중 = m.id;
-  const at = new Date(m.at || Date.now()), k = C.kst();
-  const 때 = `${at.getMonth() + 1}월 ${at.getDate()}일 ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
+  const 때글 = x => { const t = new Date(x.at || Date.now()); return `${t.getMonth() + 1}월 ${t.getDate()}일 ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`; };
+  const 때 = ms.length > 1 ? `밀린 어명 ${ms.length}통 · ${때글(ms[0])} ~ ${때글(m)}` : 때글(m);
   const el = document.createElement('div'); el.id = 'eo';
   el.innerHTML = `<canvas></canvas><div class="cry">어명이오!</div>
     <div class="scroll"><div class="rod"></div><div class="paper"><div class="in">
       <div class="from">${esc(이름(m.from || 'me'))} 전하께서 이르시길</div>
-      <div class="txt">${esc(m.text || '')}</div>
+      ${ms.length > 1 ? `<div class="txts">${ms.map((x, i) => `<div class="txt sm"><span class="no">${['一','二','三','四','五','六','七','八','九','十'][i] || i + 1}</span>${esc(x.text || '')}<small>${때글(x)}</small></div>`).join('')}</div>` : `<div class="txt">${esc(m.text || '')}</div>`}
       <div class="when">${때}</div>
       <div class="seal">御<br>命</div></div></div><div class="rod"></div></div>
     <div class="eobtns"><button class="ok">받들겠사옵니다</button><button class="no">거역하겠사옵니다</button></div>`;
@@ -661,8 +669,8 @@ function 어명띄우기(m) {
     el.querySelectorAll('.eobtns button').forEach(x => x.disabled = true);
     박수(el); await new Promise(r => setTimeout(r, 2600));
     el.classList.remove('show'); setTimeout(() => el.remove(), 380);
-    await DB.put('msgs', m.id, { read: true, readAt: Date.now() });
-    D.msgs[m.id] = { ...m, read: true };
+    const 지금 = Date.now();
+    for (const x of ms) { await DB.put('msgs', x.id, { read: true, readAt: 지금 }); D.msgs[x.id] = { ...x, read: true }; }
     어명중 = null; setTimeout(어명확인, 500);
   });
   /* 🐶 26-10-07 「거절을 누른다면 이 강아지가 근엄한 포즈로 사르르 나옴 (흐릿하다가 뚜렷해지는 효과)
@@ -671,7 +679,7 @@ function 어명띄우기(m) {
   el.querySelector('.no').addEventListener('click', () => {
     el.innerHTML = `<div class="dog"><div class="crown">👑</div><img src="dog.jpg" alt=""><div class="say">좋은 말 할 때<br>다시 기회 준다.</div><button class="ok again">📜 어명 다시 열기</button></div>`;
     if (navigator.vibrate) try { navigator.vibrate(200); } catch (_) {}
-    el.querySelector('.again').addEventListener('click', () => { el.remove(); 어명띄우기(m); });
+    el.querySelector('.again').addEventListener('click', () => { el.remove(); 어명띄우기(ms); });
   });
 }
 function 박수(el) {
