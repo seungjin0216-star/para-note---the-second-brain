@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // 🧨 26-10-14 사장님 「1번 안됨」 — 폰에 남은 옛 서비스워커가 / 와 /brain/ 을 옛 React 화면으로 바꿔치기
+      //    → 스스로 지우는 서비스워커로 바꿉니다. 폰이 한 번 열면 옛 저장분을 지우고 새로 읽음
+      //    ⚠️ 우리집(/home/sw.js · 알림)은 따로 등록돼 있어 영향 없음
+      selfDestroying: true,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
