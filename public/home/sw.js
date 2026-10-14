@@ -12,6 +12,7 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/home/';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => {
-    const w = ws.find(c => c.url.includes('/home/')); return w ? w.focus() : self.clients.openWindow(url);
+    // 🧠 26-10-14 제2의뇌 알림(url /brain/)은 제2의뇌 창으로 — 우리집 창을 앞으로 내지 않음
+    const w = ws.find(c => c.url.includes(url)); return w ? w.focus() : self.clients.openWindow(url);
   }));
 });

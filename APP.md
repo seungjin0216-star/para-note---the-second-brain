@@ -6,6 +6,32 @@
 
 ---
 
+## 🆕 2026-10-14 — 새 화면 /brain/ (지금 본체)
+
+사장님: 「제2의뇌를 정말 안 쓰게 돼. 버려지는 어플이라 마음이 아파. 내 목적의식에 맞게 전체적으로 업그레이드」
+        「앱 관리판 … 카드에 그냥 어플 이름만」 「오늘 할 일은 캘린더로 … 알림도 아이폰 기본 기능처럼 … 중복으로도」
+        「우리집에서 넣으면 여기에 자동으로」 「내가 생각하고 고민했던 부분을 남기고 싶음」
+        「맥북으로 이런저런 대화를 많이 하는데 이걸 제2의뇌에 기록하고 결과를 보거나」
+
+```
+주소      paranote.netlify.app → /brain/ 로 넘어감 (index.html 맨 위 스크립트) · 옛 React 화면은 /?old=1
+파일      public/brain/index.html 하나 (우리집처럼) · public/home/core.js 를 같이 씀 (eventsOn 등)
+로그인     Firebase 기본 앱 = 옛 제2의뇌와 같은 로그인
+탭        📅 오늘 (🔎 확인해 주세요 · 달력 · 그날 일정 · 할 일 TOP3 · 새 문제 앱)
+          📱 앱 (직원·사장·알바비·우리집 — 이름만) · 문제: 새로 → 작업 중 → 확인해 주세요 → 완료
+          ✅ 할 일 (옛 items 그대로 · tools/todo.py 와 같은 자리)
+          💭 기록 (고민 · 아이디어 · 메모 · 「어떻게 넘겼나」)
+          ＋ 빠른 기록 (고민·아이디어·할 일·앱 문제·일정·메모)
+데이터     users/{uid}/brain_issues · brain_events · brain_notes  (규칙 users/{uid}/** 그대로 · 바꿀 것 없음)
+          homes/main/events = 우리집 일정 (보라 · 읽기만)
+알림      home-cron 5분 · brain_events.alarms  숫자=몇 분 전 · 'd9'=하루 전 오전 9시 · 'YYYY-MM-DDTHH:MM'=직접
+          → 사장님 폰의 우리집 알림 길(who 'me') · 누르면 /brain/  ⚠️ 우리집 알림을 켠 폰에만 옴
+Claude    tools/brain.py — issues · issue · doing · check(🔎+🤖 한 줄) · worry · solved · log · notes
+          🔴 고친 뒤 check 까지만. 「완료」는 사장님이 앱에서
+          🔴 맥북 대화에서 사장님이 말한 고민·결정은 대화 끝에 worry / log 로 (추측은 적지 않음)
+⚠️ vite PWA 가 home/·brain/ 을 저장(precache)하지 않게 globIgnores (26-10-14) — 저장하면 폰에 옛 판이 남음
+```
+
 ## 0. ⚠️ 건드리기 전
 
 ```

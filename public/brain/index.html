@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1F6F8B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="제2의뇌">
+<title>제2의뇌</title>
+<!--
+  제2의뇌 — 새 화면 (26-10-14)
+  사장님: 「제2의뇌를 정말 안 쓰게 돼. 버려지는 어플이라 마음이 아파. 내 목적의식에 맞게 전체적으로 업그레이드」
+          「앱 관리판 … 쓰고 있는 앱 카드에 그냥 어플 이름만」 「오늘 할 일은 캘린더로 … 알림도 아이폰 기본 기능처럼」
+          「우리집에서 넣으면 여기에 자동으로」 「내가 생각하고 고민했던 부분을 남기고 싶음」
+  데이터  users/{uid}/items           옛 할 일 (프로젝트 · checks) — tools/todo.py 와 같은 자리, 그대로 씀
+          users/{uid}/brain_issues    앱 문제   {app, text, status new|doing|check|done, note, photo, at, upd}
+          users/{uid}/brain_events    일정      {title, date, time, alarms[], repeat, until, skip[]}  (우리집 events 와 같은 꼴 → core.eventsOn)
+          users/{uid}/brain_notes     기록      {kind worry|idea|todo|log, text, at, solved, how, from}
+          homes/main/events            우리집 일정 (읽기만 · 보라)
+  알림    home-cron 이 5분마다 brain_events 를 보고 우리집 푸시 길(who 'me')로 보냄
+  ⚠️ 지우지 않습니다 — off:true (CLAUDE.md ④)
+-->
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--paper:#F4F6F5;--surface:#fff;--ink:#1C2529;--muted:#5E6B70;--line:#DCE2E0;--accent:#1F6F8B;--beef:#B3261E;--done:#2E7D4F;--warm:#A8741A;--home:#7C5CC4;--soft:#EEF2F1}
+@media (prefers-color-scheme:dark){:root{--paper:#12191C;--surface:#1B2428;--ink:#E8EEEC;--muted:#9AA8AC;--line:#2C383D;--accent:#5BB2D1;--beef:#E5675E;--done:#5BB585;--warm:#D9A44A;--home:#A98BEA;--soft:#222E33}}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--paper);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;word-break:keep-all;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+header{padding:calc(14px + env(safe-area-inset-top)) 16px 4px;display:flex;justify-content:space-between;align-items:flex-end;max-width:620px;margin:0 auto}
+header h1{font-size:22px;margin:0}header small{color:var(--muted);font-size:13px}
+main{padding:0 16px 130px;max-width:620px;margin:0 auto}
+h2{font-size:14px;margin:20px 2px 8px;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;align-items:center}
+h2 button{border:0;background:none;color:var(--accent);font-size:14px;font-weight:700;padding:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;border:0;border-top:1px solid var(--line);background:none;width:100%;text-align:left}
+.row:first-child{border-top:0}.row .m{flex:1;min-width:0}.row .m small{display:block;color:var(--muted);font-size:13px}
+.empty{padding:16px;color:var(--muted);text-align:center;font-size:14px}
+.tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.t-new{background:#fde7e5;color:#B3261E}.t-doing{background:#fff1d6;color:#8a5a00}.t-check{background:#dcefff;color:#1F6F8B}.t-done{background:#dff3e6;color:#2E7D4F}.t-mut{background:var(--soft);color:var(--muted)}
+.hero{background:var(--accent);color:#fff;border-radius:18px;padding:12px 14px;margin-top:8px}
+.hero>b{font-size:16px}.hero .r{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #ffffff33}.hero .r:first-of-type{border-top:0;margin-top:4px}
+.hero .r small{display:block;opacity:.85;font-size:13px}.hero button{border:0;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700;flex:none}
+.b-ok{background:#fff;color:var(--accent)}.b-no{background:#ffffff26;color:#fff}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:8px}
+.cal>*{text-align:center;padding:6px 0 10px;border-radius:10px;font-size:15px;position:relative;border:0;background:none}
+.cal .h{color:var(--muted);font-size:12px;padding:0 0 4px}.cal .o{opacity:.3}.cal .t{font-weight:800;color:var(--accent)}
+.cal .sel{background:var(--accent);color:#fff;font-weight:700}
+.cal i{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+.cal i b{width:5px;height:5px;border-radius:50%;background:var(--warm)}.cal i b.hm{background:var(--home)}.cal .sel i b{background:#fff}
+.calh{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 0}.calh button{border:0;background:var(--soft);border-radius:10px;width:34px;height:30px}
+.ev{box-shadow:inset 4px 0 0 var(--warm)}.ev.hm{box-shadow:inset 4px 0 0 var(--home)}
+.bell{font-size:12px;color:var(--muted);white-space:nowrap}
+.apps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.app{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px 12px;text-align:left;font-weight:700;font-size:15px;min-height:64px}
+.app[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.chk{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:14px;color:transparent}
+.chk.on{background:var(--done);border-color:var(--done);color:#fff}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:5}
+nav button{flex:1;border:0;background:none;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1px}
+nav button b{font-size:21px}nav button[aria-pressed=true]{color:var(--accent);font-weight:700}
+nav i{position:absolute;margin-left:22px;margin-top:-2px;width:8px;height:8px;border-radius:50%;background:var(--beef)}
+.fab{position:fixed;right:18px;bottom:calc(76px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;box-shadow:0 6px 18px #0003;z-index:6}
+.ov{position:fixed;inset:0;background:#0006;display:none;align-items:flex-end;z-index:9}.ov.show{display:flex}
+.sheet{background:var(--surface);width:100%;max-width:620px;margin:0 auto;border-radius:20px 20px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.sheet h3{margin:0 0 10px;font-size:19px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips button{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 13px;font-size:14px}
+.chips button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.fld{width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;padding:12px;margin-top:8px}
+textarea.fld{resize:vertical;min-height:80px;line-height:1.5}
+.two{display:flex;gap:8px}.two>*{flex:1}
+.big{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;font-weight:700;font-size:17px;padding:15px;margin-top:14px}
+.big.sec{background:var(--soft);color:var(--ink)}.big.red{background:var(--beef)}
+.lbl{font-size:13px;color:var(--muted);margin:14px 2px 2px;font-weight:700}
+.note{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted);margin-top:12px}
+.worry{border-left:4px solid var(--warm)}.worry.ok{border-left-color:var(--done)}
+.screen{display:none}.screen.on{display:block}
+.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#24323A;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s;z-index:20;pointer-events:none;max-width:90%}
+.toast.show{opacity:1}
+.gate{text-align:center;padding:90px 24px}.gate h1{font-size:28px}
+img.ph{max-width:100%;border-radius:12px;margin-top:8px}
+</style></head>
+<body>
+<header><div><h1>제2의뇌</h1><small id="sub"></small></div><small id="who"></small></header>
+<main id="app"><div class="empty">불러오는 중…</div></main>
+<button class="fab" id="fab" hidden aria-label="빠른 기록">＋</button>
+<nav id="nav" hidden>
+  <button data-s="today" aria-pressed="true"><b>📅</b>오늘</button>
+  <button data-s="apps"><b>📱</b>앱</button>
+  <button data-s="todo"><b>✅</b>할 일</button>
+  <button data-s="log"><b>💭</b>기록</button>
+</nav>
+<div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<script type="module">
+import * as C from '../home/core.js?v=20261003b';   // ⚠️ 우리집과 같은 파일 · 우리집이 v= 를 바꾸면 여기도
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let tt; const toast = t => { const e = $('#toast'); e.textContent = t; e.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => e.classList.remove('show'), 2000); };
+const DEMO = /^(localhost|127\.)/.test(location.hostname);
+const API = '/.netlify/functions/home-api';
+const DAY = '일월화수목금토';
+
+/* 🔴 사장님: 「쓰고 있는 앱 목록을 이렇게 — 매장통합앱(직원), 매장통합앱(사장), 알바비계산기, 우리집 먼저 · 추후에 다른 어플들 결정」 */
+const APPS = [['staff', '🏪', '매장통합앱(직원)'], ['owner', '👔', '매장통합앱(사장)'], ['alba', '💵', '알바비계산기'], ['home', '🏠', '우리집']];
+const ST = { new: ['새로', 't-new'], doing: ['작업 중', 't-doing'], check: ['확인해 주세요', 't-check'], done: ['완료', 't-done'] };
+const KIND = { worry: '💭 고민', idea: '💡 아이디어', todo: '✅ 할 일', log: '📝 메모' };
+/* 알림 — 여러 개 동시에 (사장님 「한 시간 전과 00시 둘 다 알림 갈 수 있게」) · 숫자 = 몇 분 전 · 'd9' = 하루 전 오전 9시 */
+const ALARMS = [[0, '정시'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전'], ['d9', '하루 전 오전 9시']];
+const alarmText = a => typeof a === 'string' && a.includes('T') ? a.slice(5, 16).replace('T', ' ').replace('-', '/') : (ALARMS.find(x => x[0] === a) || [, a])[1];
+
+const D = { items: {}, issues: {}, events: {}, notes: {}, homeEv: {} };
+let UID = null, DB = null, cur = 'today', today = C.kst().date, sel = today, month = today.slice(0, 7), appSel = 'staff', issueF = 'all', noteF = 'all';
+
+/* ── 저장소 ── */
+function demo() {
+  const A = n => C.addDays(today, n), now = Date.now();
+  D.items = { p1: { id: 'p1', type: 'project', title: '장수한우곱창 자동화', checks: [{ id: 'a', t: '쿠팡이츠 메뉴·사진 정리', d: false }, { id: 'b', t: '체험단 양식 만들기', d: false }] }, p2: { id: 'p2', type: 'project', title: '장승진의 미션들', checks: [{ id: 'c', t: '실비 받을 서류 구비하기', d: false }, { id: 'd', t: '배민 배달업체 빼기', d: true }] } };
+  D.issues = { i1: { id: 'i1', app: 'staff', text: '업체 휴무 넣은 것이 바로 안 보임', status: 'new', at: now }, i2: { id: 'i2', app: 'staff', text: '마감 대분류 색칠', status: 'check', note: '소스류·찬냉장고 등 6색 · v17', at: now }, i3: { id: 'i3', app: 'owner', text: '휴무 알림 19시', status: 'check', note: '직원·사장 둘 다 19:00 · 「~까지」 표시', at: now }, i4: { id: 'i4', app: 'alba', text: '급여 화면 느림', status: 'new', at: now } };
+  D.events = { e1: { id: 'e1', title: '세무사 서류 보내기', date: today, time: '15:00', alarms: [0, 60] }, e2: { id: 'e2', title: '미락 휴무 확인 전화', date: A(2), time: '', alarms: ['d9'] } };
+  D.homeEv = { h1: { id: 'h1', title: '두리 병원', date: today, time: '19:00', who: 'we' }, h2: { id: 'h2', title: '장보기', date: A(3), time: '', who: 'we' } };
+  D.notes = { n1: { id: 'n1', kind: 'worry', text: '알바 한 명 더 뽑을까, 내가 더 들어갈까', at: now - 864e5, solved: false }, n2: { id: 'n2', kind: 'worry', text: '월요일 발주가 바로 나가버림', at: now - 3 * 864e5, solved: true, how: '화요일 20:30 예약을 서버에 다시 넣음 (Claude)', from: 'mac' }, n3: { id: 'n3', kind: 'idea', text: '단골 손님 생일 쿠폰', at: now } };
+  DB = { put: async (c, id, v) => { D[c][id] = { ...(D[c][id] || {}), ...v, id }; render(); }, add: async (c, v) => { const id = 'x' + Date.now(); D[c][id] = { ...v, id }; render(); return id; } };
+  render();
+}
+const MAP = { issues: 'brain_issues', events: 'brain_events', notes: 'brain_notes', items: 'items' };
+async function live() {
+  const cfg = await (await fetch(API + '?a=config')).json();
+  if (!cfg.apiKey) throw new Error('서버 설정을 못 받았습니다');
+  const FV = '10.12.2', G = m => `https://www.gstatic.com/firebasejs/${FV}/firebase-${m}.js`;
+  const [{ initializeApp }, A, F] = await Promise.all([import(G('app')), import(G('auth')), import(G('firestore'))]);
+  const app = initializeApp(cfg);   // ⚠️ 이름 없이 = 옛 제2의뇌와 같은 로그인 (다시 로그인 안 해도 됨)
+  const auth = A.getAuth(app), db = F.getFirestore(app);
+  A.onAuthStateChanged(auth, u => {
+    if (!u) return gate(A, auth);
+    UID = u.uid; $('#who').textContent = u.displayName || '';
+    const col = n => F.collection(db, 'users', UID, MAP[n]);
+    Object.keys(MAP).forEach(n => F.onSnapshot(col(n), s => { const o = {}; s.forEach(d => o[d.id] = { id: d.id, ...d.data() }); D[n] = o; render(); }, e => toast('⚠️ ' + e.code)));
+    F.onSnapshot(F.collection(db, 'homes', 'main', 'events'), s => { const o = {}; s.forEach(d => o[d.id] = { id: d.id, ...d.data() }); D.homeEv = o; render(); }, () => {});
+    DB = { put: (c, id, v) => F.setDoc(F.doc(db, 'users', UID, MAP[c], id), { ...v, upd: Date.now() }, { merge: true }).catch(e => toast('⚠️ 저장 못 함 ' + e.code)),
+           add: async (c, v) => (await F.addDoc(col(c), { ...v, at: v.at || Date.now() })).id };
+    render();
+  });
+}
+function gate(A, auth) {
+  $('#app').innerHTML = `<div class="gate"><h1>🧠 제2의뇌</h1><p>구글 계정으로 들어와 주세요.</p><button class="big" id="login">구글로 로그인</button></div>`;
+  $('#login').onclick = async () => { const p = new A.GoogleAuthProvider(); try { await A.signInWithPopup(auth, p); } catch (e) { if (/popup/.test(e.code)) A.signInWithRedirect(auth, p); else toast('로그인 실패: ' + e.code); } };
+}
+
+/* ── 계산 ── */
+const 이슈 = () => Object.values(D.issues).filter(x => !x.off).sort((a, b) => (b.upd || b.at || 0) - (a.upd || a.at || 0));
+const 내일정 = () => Object.values(D.events).filter(e => !e.off);
+const 집일정 = () => Object.values(D.homeEv).filter(e => !e.off).map(e => ({ ...e, _home: 1 }));
+const 그날 = s => C.eventsOn([...내일정(), ...집일정()], s);
+const 할일들 = () => Object.values(D.items).filter(x => x.type === 'project' && !x.off && !String(x.title).includes('웹앱오류수정'))
+  .flatMap(p => (p.checks || []).filter(c => !c.d).map(c => ({ ...c, pid: p.id, proj: p.title })));
+
+/* ── 그리기 ── */
+function render() {
+  if (!DB) return;
+  today = C.kst().date;
+  $('#sub').textContent = `${+today.slice(5, 7)}월 ${+today.slice(8)}일 ${DAY[C.wdOf(today)]}요일`;
+  $('#nav').hidden = false; $('#fab').hidden = false;
+  const 확인 = 이슈().filter(x => x.status === 'check').length;
+  $('#nav [data-s="apps"]').innerHTML = `<b>📱</b>앱${확인 ? '<i></i>' : ''}`;
+  $('#app').innerHTML = { today: rToday, apps: rApps, todo: rTodo, log: rLog }[cur]();
+}
+function 확인카드() {
+  const xs = 이슈().filter(x => x.status === 'check');
+  if (!xs.length) return '';
+  return `<div class="hero"><b>🔎 확인해 주세요 · ${xs.length}건</b>${xs.map(x => { const a = APPS.find(a => a[0] === x.app) || ['', '📱', x.app];
+    return `<div class="r"><div style="flex:1;min-width:0"><b style="font-size:15px">${a[1]} ${esc(x.text)}</b>${x.note ? `<small>🤖 ${esc(x.note)}</small>` : ''}</div><button class="b-ok" data-act="okIssue" data-id="${x.id}">완료</button><button class="b-no" data-act="noIssue" data-id="${x.id}">아직</button></div>`; }).join('')}</div>`;
+}
+function 달력() {
+  const [y, m] = month.split('-').map(Number), first = `${month}-01`, start = C.addDays(first, -C.wdOf(first));
+  let h = [...DAY].map(d => `<div class="h">${d}</div>`).join('');
+  for (let i = 0; i < 42; i++) {
+    const s = C.addDays(start, i); if (i >= 35 && s.slice(0, 7) !== month) break;
+    const es = 그날(s), my = es.filter(e => !e._home).length, hm = es.filter(e => e._home).length;
+    h += `<button class="${s.slice(0, 7) !== month ? 'o' : ''} ${s === today ? 't' : ''} ${s === sel ? 'sel' : ''}" data-act="day" data-d="${s}">${+s.slice(8)}${es.length ? `<i>${'<b></b>'.repeat(Math.min(my, 3))}${'<b class="hm"></b>'.repeat(Math.min(hm, 2))}</i>` : ''}</button>`;
+  }
+  return `<div class="card"><div class="calh"><button data-act="mon" data-d="-1">‹</button><b>${y}년 ${m}월</b><button data-act="mon" data-d="1">›</button></div><div class="cal">${h}</div></div>`;
+}
+const 일정줄 = (e, s) => `<button class="row ev ${e._home ? 'hm' : ''}" data-act="${e._home ? 'homeEv' : 'editEv'}" data-id="${e.id}"><div class="m">${e._home ? '🏠 ' : ''}${esc(e.title)}<small>${e.time || '종일'}${e._home ? ' · 우리집' : ''}${e.repeat && e.repeat.type && e.repeat.type !== 'none' ? ' · 반복' : ''}</small></div>${(e.alarms || []).length ? `<span class="bell">🔔 ${e.alarms.map(alarmText).join(' · ')}</span>` : ''}</button>`;
+function rToday() {
+  const es = 그날(sel), td = 할일들().slice(0, 3), 새 = APPS.map(a => [a, 이슈().filter(x => x.app === a[0] && x.status === 'new').length]).filter(x => x[1]);
+  return 확인카드() + `<h2>📅 달력</h2>` + 달력()
+    + `<h2>${sel === today ? '오늘' : C.label(sel)} 일정 <button data-act="newEv" data-d="${sel}">＋ 일정</button></h2><div class="card">${es.map(e => 일정줄(e, sel)).join('') || '<div class="empty">일정 없음</div>'}</div>`
+    + `<h2>할 일 TOP 3 <button data-act="go" data-s="todo">전체 ›</button></h2><div class="card">${td.map(c => `<button class="row" data-act="chk" data-pid="${c.pid}" data-cid="${c.id}"><span class="chk">✓</span><div class="m">${esc(c.t)}<small>${esc(c.proj)}</small></div></button>`).join('') || '<div class="empty">밀린 할 일 없음 ✨</div>'}</div>`
+    + (새.length ? `<h2>🚦 새 문제가 있는 앱</h2><div class="card">${새.map(([a, n]) => `<button class="row" data-act="app" data-a="${a[0]}"><div class="m">${a[1]} ${a[2]}</div><span class="tag t-new">새로 ${n}</span></button>`).join('')}</div>` : '');
+}
+function rApps() {
+  const xs = 이슈().filter(x => x.app === appSel && (issueF === 'all' ? x.status !== 'done' : x.status === issueF));
+  const a = APPS.find(a => a[0] === appSel);
+  return 확인카드() + `<h2>쓰고 있는 앱</h2><div class="apps">${APPS.map(([k, e, n]) => `<button class="app" data-act="app" data-a="${k}" aria-pressed="${k === appSel}">${e} ${n}</button>`).join('')}</div>
+    <h2>${a[1]} ${a[2]} <button data-act="newIssue">＋ 문제 적기</button></h2>
+    <div class="chips" style="margin-bottom:8px">${[['all', '진행 중'], ['new', '새로'], ['doing', '작업 중'], ['check', '확인해 주세요'], ['done', '완료']].map(([k, l]) => `<button data-act="issueF" data-f="${k}" aria-pressed="${k === issueF}">${l}</button>`).join('')}</div>
+    <div class="card">${xs.map(x => `<button class="row" data-act="issue" data-id="${x.id}"><div class="m">${esc(x.text)}<small>${new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.photo ? ' · 📷' : ''}${x.note ? ' · 🤖 ' + esc(x.note) : ''}</small></div><span class="tag ${ST[x.status || 'new'][1]}">${ST[x.status || 'new'][0]}</span></button>`).join('') || '<div class="empty">없음</div>'}</div>
+    <div class="note">적어 두면 다음에 Claude 가 자비스로 열 때 가져갑니다. 고치면 「확인해 주세요」로 바뀌고 🤖 한 줄이 붙습니다. 완료 / 아직.</div>`;
+}
+function rTodo() {
+  const ps = Object.values(D.items).filter(x => x.type === 'project' && !x.off).sort((a, b) => String(a.title).includes('웹앱오류') - String(b.title).includes('웹앱오류'));
+  const 숨김 = Object.values(D.items).filter(x => x.type && x.type !== 'project').length;
+  return ps.map(p => { const open = (p.checks || []).filter(c => !c.d); if (!open.length) return '';
+    return `<h2>${esc(p.title)} <button data-act="addTodo" data-pid="${p.id}">＋</button></h2><div class="card">${open.map(c => `<button class="row" data-act="chk" data-pid="${p.id}" data-cid="${c.id}"><span class="chk">✓</span><div class="m">${esc(c.t)}</div></button>`).join('')}</div>`; }).join('')
+    + `<p class="note">🗄 옛 영역·자료함·보관 ${숨김}개는 접어 두었습니다 (지우지 않음) · <a href="/?old=1">옛 화면</a></p>`;
+}
+function rLog() {
+  const xs = Object.values(D.notes).filter(x => !x.off && (noteF === 'all' || x.kind === noteF || (noteF === 'open' && x.kind === 'worry' && !x.solved))).sort((a, b) => (b.at || 0) - (a.at || 0));
+  return `<div class="chips" style="margin-top:8px">${[['all', '전체'], ['open', '💭 풀리지 않은 고민'], ['worry', '💭 고민 전체'], ['idea', '💡 아이디어'], ['log', '📝 메모']].map(([k, l]) => `<button data-act="noteF" data-f="${k}" aria-pressed="${k === noteF}">${l}</button>`).join('')}</div>
+    <h2>${xs.length}개</h2><div class="card">${xs.map(x => `<button class="row ${x.kind === 'worry' ? 'worry' + (x.solved ? ' ok' : '') : ''}" data-act="note" data-id="${x.id}"><div class="m">${esc(x.text)}<small>${KIND[x.kind] || ''} · ${new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.from === 'mac' ? ' · 🖥 맥북 대화' : ''}${x.kind === 'worry' ? (x.solved ? ' · ✅ 넘김' : ' · 고민 중') : ''}${x.how ? '<br>→ ' + esc(x.how) : ''}</small></div></button>`).join('') || '<div class="empty">아직 없음 — ＋ 로 한 줄</div>'}</div>
+    <div class="note">💭 고민은 그 순간 한 줄이면 됩니다. 나중에 풀리면 「어떻게 넘겼나」를 적어 두세요 — 다음에 비슷한 일이 생기면 여기서 찾습니다.<br>🖥 맥북에서 Claude 와 나눈 고민·결정은 Claude 가 대화 끝에 여기 남깁니다.</div>`;
+}
+
+/* ── 시트 ── */
+const openSheet = h => { $('#sheet').innerHTML = h; $('#ov').classList.add('show'); };
+const closeSheet = () => $('#ov').classList.remove('show');
+$('#ov').addEventListener('click', e => { if (e.target.id === 'ov') closeSheet(); });
+let F = {};
+function evSheet(e) {
+  F = e ? JSON.parse(JSON.stringify(e)) : { title: '', date: sel, time: '', alarms: [], repeat: { type: 'none' } };
+  drawEv();
+}
+function drawEv() {
+  const r = (F.repeat || {}).type || 'none', customs = (F.alarms || []).filter(a => typeof a === 'string' && a.includes('T'));
+  openSheet(`<h3>📅 ${F.id ? '일정 고치기' : '일정 넣기'}</h3>
+    <input class="fld" id="evT" value="${esc(F.title)}" placeholder="무엇을 (예: 세무사 서류 보내기)">
+    <div class="two"><input class="fld" id="evD" type="date" value="${F.date}"><input class="fld" id="evH" type="time" value="${F.time || ''}"></div>
+    <div class="lbl">🔔 알림 — 여러 개 골라도 됩니다 ${F.time ? '' : '(시간이 없으면 「하루 전 오전 9시」·직접만 울립니다)'}</div>
+    <div class="chips">${ALARMS.map(([k, l]) => `<button data-act="alm" data-k="${k}" aria-pressed="${(F.alarms || []).includes(k)}">${l}</button>`).join('')}</div>
+    <div class="two" style="align-items:center"><input class="fld" id="evC" type="datetime-local"><button class="big sec" data-act="almC" style="flex:none;width:auto;padding:12px 14px;margin-top:8px">＋ 직접</button></div>
+    ${customs.length ? `<div class="chips" style="margin-top:8px">${customs.map(c => `<button aria-pressed="true" data-act="almX" data-k="${c}">🔔 ${alarmText(c)} ✕</button>`).join('')}</div>` : ''}
+    <div class="lbl">반복</div>
+    <div class="chips">${[['none', '안 함'], ['daily', '매일'], ['weekly', '매주'], ['monthly', '매달'], ['yearly', '매년']].map(([k, l]) => `<button data-act="rep" data-k="${k}" aria-pressed="${r === k || (k === 'daily' && r === 'everyN')}">${l}</button>`).join('')}</div>
+    <button class="big" data-act="saveEv">저장</button>${F.id ? '<button class="big sec" data-act="offEv">이 일정 빼기</button>' : ''}`);
+}
+const 읽기 = () => { if ($('#evT')) { F.title = $('#evT').value; F.date = $('#evD').value || F.date; F.time = $('#evH').value; } };
+function issueSheet(x, keep) {
+  if (!keep) F = x ? { ...x } : { app: appSel, text: '', status: 'new', photo: '' };
+  x = F.id ? F : null;
+  openSheet(`<h3>📱 ${x ? '앱 문제' : '앱 문제 적기'}</h3>
+    <div class="chips">${APPS.map(([k, e, n]) => `<button data-act="iApp" data-k="${k}" aria-pressed="${F.app === k}">${e} ${n}</button>`).join('')}</div>
+    <textarea class="fld" id="iT" placeholder="무엇이 문제인지 · 고칠 것 한 줄">${esc(F.text)}</textarea>
+    <label class="big sec" style="display:block;text-align:center">📷 스크린샷 ${F.photo ? '바꾸기' : '붙이기'}<input type="file" accept="image/*" id="iP" hidden></label>
+    ${F.photo ? `<img class="ph" src="${F.photo}" alt="">` : ''}
+    ${x ? `<div class="lbl">상태</div><div class="chips">${Object.entries(ST).map(([k, [l]]) => `<button data-act="iSt" data-k="${k}" aria-pressed="${F.status === k}">${l}</button>`).join('')}</div>${F.note ? `<div class="note">🤖 ${esc(F.note)}</div>` : ''}` : ''}
+    <button class="big" data-act="saveIssue">${x ? '저장' : '넣기'}</button>${x ? '<button class="big sec" data-act="offIssue">빼기 (지우지 않음)</button>' : ''}`);
+}
+function noteSheet(x) {
+  F = { ...x };
+  openSheet(`<h3>${KIND[x.kind] || '기록'}</h3>
+    <textarea class="fld" id="nT">${esc(x.text)}</textarea>
+    ${x.kind === 'worry' ? `<div class="lbl">어떻게 넘겼나 (풀렸을 때)</div><textarea class="fld" id="nH" placeholder="예: 주말만 알바 한 명 · 평일은 내가">${esc(x.how || '')}</textarea>` : ''}
+    <button class="big" data-act="saveNote">${x.kind === 'worry' && !x.solved ? '저장' : '저장'}</button>
+    ${x.kind === 'worry' && !x.solved ? '<button class="big sec" data-act="solveNote">✅ 풀렸어요 (넘김)</button>' : ''}
+    <button class="big sec" data-act="offNote">빼기 (지우지 않음)</button>`);
+}
+let QK = 'worry';
+function quickSheet() {
+  openSheet(`<h3>✏️ 빠른 기록</h3>
+    <div class="chips">${[['worry', '💭 고민'], ['idea', '💡 아이디어'], ['todo', '✅ 할 일'], ['issue', '📱 앱 문제'], ['event', '📅 일정'], ['log', '📝 메모']].map(([k, l]) => `<button data-act="qk" data-k="${k}" aria-pressed="${QK === k}">${l}</button>`).join('')}</div>
+    ${QK === 'issue' ? `<div class="chips" style="margin-top:8px">${APPS.map(([k, e, n]) => `<button data-act="iApp" data-k="${k}" aria-pressed="${appSel === k}">${e} ${n}</button>`).join('')}</div>` : ''}
+    ${QK === 'todo' ? `<select class="fld" id="qP">${Object.values(D.items).filter(x => x.type === 'project' && !x.off).map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('')}</select>` : ''}
+    <textarea class="fld" id="qT" placeholder="${QK === 'worry' ? '지금 고민 한 줄 — 가볍든 무겁든' : '한 줄이면 됩니다'} · 🎤 키보드 마이크로 말해도 됩니다"></textarea>
+    <button class="big" data-act="qSave">넣기</button>`);
+  setTimeout(() => $('#qT') && $('#qT').focus(), 80);
+}
+function 사진줄이기(file) { return new Promise((ok, no) => { const img = new Image(), u = URL.createObjectURL(file); img.onload = () => { const k = Math.min(1, 900 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', 0.7)); }; img.onerror = no; img.src = u; }); }
+document.addEventListener('change', async e => { if (e.target.id === 'iP' && e.target.files[0]) { F.text = $('#iT').value; F.photo = await 사진줄이기(e.target.files[0]); issueSheet(null, true); } });
+
+/* ── 누르기 ── */
+document.addEventListener('click', async e => {
+  const nb = e.target.closest('#nav button'); if (nb) { cur = nb.dataset.s; document.querySelectorAll('#nav button').forEach(x => x.setAttribute('aria-pressed', x === nb)); render(); scrollTo(0, 0); return; }
+  if (e.target.closest('#fab')) { QK = 'worry'; return quickSheet(); }
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const k = b.dataset.act, id = b.dataset.id;
+  switch (k) {
+    case 'go': cur = b.dataset.s; document.querySelectorAll('#nav button').forEach(x => x.setAttribute('aria-pressed', x.dataset.s === cur)); return render();
+    case 'day': sel = b.dataset.d; if (sel.slice(0, 7) !== month) month = sel.slice(0, 7); return render();
+    case 'mon': { const [y, m] = month.split('-').map(Number), d = new Date(Date.UTC(y, m - 1 + +b.dataset.d, 1)); month = d.toISOString().slice(0, 7); return render(); }
+    case 'newEv': return evSheet(null);
+    case 'editEv': return evSheet(D.events[id]);
+    case 'homeEv': { const h = D.homeEv[id]; return toast(`🏠 우리집 일정 — 고치기는 우리집 앱에서 (${h.title})`); }
+    case 'alm': { 읽기(); const v = isNaN(+b.dataset.k) ? b.dataset.k : +b.dataset.k; F.alarms = F.alarms || []; F.alarms = F.alarms.includes(v) ? F.alarms.filter(x => x !== v) : [...F.alarms, v]; return drawEv(); }
+    case 'almC': { 읽기(); const v = $('#evC').value; if (!v) return toast('날짜·시간을 골라 주세요'); F.alarms = [...(F.alarms || []), v]; return drawEv(); }
+    case 'almX': { 읽기(); F.alarms = F.alarms.filter(x => x !== b.dataset.k); return drawEv(); }
+    case 'rep': { 읽기(); const t = b.dataset.k; F.repeat = t === 'daily' ? { type: 'everyN', n: 1 } : t === 'weekly' ? { type: 'weekly', days: [C.wdOf(F.date)] } : { type: t }; return drawEv(); }
+    case 'saveEv': { 읽기(); if (!F.title.trim()) return toast('무엇인지 적어 주세요'); const v = { title: F.title.trim(), date: F.date, time: F.time || '', alarms: F.alarms || [], repeat: F.repeat || { type: 'none' } };
+      if (F.id) await DB.put('events', F.id, v); else await DB.add('events', v); closeSheet(); sel = F.date; month = F.date.slice(0, 7); return toast('📅 저장했습니다' + (v.alarms.length ? ' · 🔔 ' + v.alarms.map(alarmText).join(', ') : '')); }
+    case 'offEv': await DB.put('events', F.id, { off: true }); closeSheet(); return toast('뺐습니다');
+    case 'chk': { const p = D.items[b.dataset.pid]; const checks = (p.checks || []).map(c => c.id === b.dataset.cid ? { ...c, d: true } : c); await DB.put('items', p.id, { checks }); return toast('✅ 완료 — 할 일 탭에서 안 보입니다'); }
+    case 'addTodo': { const t = prompt('할 일 한 줄'); if (!t) return; const p = D.items[b.dataset.pid]; await DB.put('items', p.id, { checks: [...(p.checks || []), { id: String(Date.now()), t, d: false }] }); return toast('넣었습니다'); }
+    case 'app': appSel = b.dataset.a; issueF = 'all'; if (cur !== 'apps') { cur = 'apps'; document.querySelectorAll('#nav button').forEach(x => x.setAttribute('aria-pressed', x.dataset.s === 'apps')); } return render();
+    case 'issueF': issueF = b.dataset.f; return render();
+    case 'newIssue': return issueSheet(null);
+    case 'issue': return issueSheet(D.issues[id]);
+    case 'iApp': { if ($('#iT')) { F.text = $('#iT').value; F.app = b.dataset.k; return issueSheet(null, true); } appSel = b.dataset.k; const t = $('#qT').value; quickSheet(); $('#qT').value = t; return; }
+    case 'iSt': F.text = $('#iT').value; F.status = b.dataset.k; return issueSheet(null, true);
+    case 'saveIssue': { F.text = $('#iT').value.trim(); if (!F.text) return toast('한 줄 적어 주세요'); const v = { app: F.app, text: F.text, status: F.status || 'new', photo: F.photo || '' };
+      if (F.id) await DB.put('issues', F.id, v); else await DB.add('issues', { ...v, at: Date.now() }); appSel = F.app; closeSheet(); return toast('📱 적었습니다'); }
+    case 'offIssue': await DB.put('issues', F.id, { off: true }); closeSheet(); return toast('뺐습니다');
+    case 'okIssue': await DB.put('issues', id, { status: 'done', doneAt: Date.now() }); return toast('✅ 완료');
+    case 'noIssue': { const why = prompt('무엇이 아직인가요? (한 줄 · 비워도 됨)') ; await DB.put('issues', id, { status: 'doing', back: why || '' }); return toast('🔁 다시 작업 중으로'); }
+    case 'noteF': noteF = b.dataset.f; return render();
+    case 'note': return noteSheet(D.notes[id]);
+    case 'saveNote': { const v = { text: $('#nT').value }; if ($('#nH')) v.how = $('#nH').value; await DB.put('notes', F.id, v); closeSheet(); return toast('저장했습니다'); }
+    case 'solveNote': { await DB.put('notes', F.id, { text: $('#nT').value, how: ($('#nH') || {}).value || '', solved: true, solvedAt: Date.now() }); closeSheet(); return toast('✅ 넘긴 고민으로'); }
+    case 'offNote': await DB.put('notes', F.id, { off: true }); closeSheet(); return toast('뺐습니다');
+    case 'qk': { const t = ($('#qT') || {}).value || ''; QK = b.dataset.k; if (QK === 'event') { closeSheet(); evSheet(null); setTimeout(() => { if ($('#evT')) $('#evT').value = t; }, 30); return; } quickSheet(); $('#qT').value = t; return; }
+    case 'qSave': { const t = $('#qT').value.trim(); if (!t) return toast('한 줄 적어 주세요');
+      if (QK === 'issue') await DB.add('issues', { app: appSel, text: t, status: 'new', at: Date.now() });
+      else if (QK === 'todo') { const p = D.items[$('#qP').value]; await DB.put('items', p.id, { checks: [...(p.checks || []), { id: String(Date.now()), t, d: false }] }); }
+      else await DB.add('notes', { kind: QK, text: t, at: Date.now(), solved: false, from: 'phone' });
+      closeSheet(); return toast({ worry: '💭 고민을 남겼습니다', idea: '💡 남겼습니다', todo: '✅ 할 일에 넣었습니다', issue: '📱 앱 판에 넣었습니다', log: '📝 남겼습니다' }[QK]); }
+  }
+});
+
+if (DEMO) demo(); else live().catch(e => { $('#app').innerHTML = `<div class="empty">못 열었습니다<br><small>${esc(e.message)}</small></div>`; });
+</script>
+</body></html>

@@ -58,14 +58,14 @@ export async function vapidPublic() { const { db } = admin(); return (await vapi
 /** 알림 보내기
     to = ['me','her','tab'] 중 몇 개. 'tab' = 거실 탭
     ⚠️ 410/404 (구독 끊김) 은 off:true 로 표시만 (지우지 않음 · 규칙 ④) */
-export async function push(db, to, title, body, tag) {
+export async function push(db, to, title, body, tag, url = '/home/') {   // url — 🧠 제2의뇌 알림은 '/brain/' (26-10-14)
   await vapid(db);
   const subs = await readCol(db, 'subs');
   const targets = Object.values(subs).filter(s => !s.off && to.includes(s.who));
   let sent = 0;
   await Promise.all(targets.map(async s => {
     try {
-      await webpush.sendNotification(JSON.parse(s.sub), JSON.stringify({ title, body, tag, url: '/home/' }), { TTL: 3600 });
+      await webpush.sendNotification(JSON.parse(s.sub), JSON.stringify({ title, body, tag, url }), { TTL: 3600 });
       sent++;
     } catch (e) {
       if (e.statusCode === 410 || e.statusCode === 404) await db.doc(`${HOME}/subs/${s.id}`).set({ off: true, offAt: Date.now() }, { merge: true });

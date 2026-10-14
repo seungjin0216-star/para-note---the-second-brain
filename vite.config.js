@@ -34,10 +34,12 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // ⚠️ 26-10-14 우리집·새 제2의뇌는 따로 도는 화면 — 옛 화면 서비스워커가 저장해 두면 폰에 옛 판이 남습니다
+        globIgnores: ['home/**', 'brain/**'],
         // 오프라인에서도 앱 열리도록
         navigateFallback: '/index.html',
         // ⚠️ 우리집(/home/)은 따로 도는 앱입니다. 제2의뇌 화면으로 바꿔치기하지 않게 (26-10-02)
-        navigateFallbackDenylist: [/^\/home/],
+        navigateFallbackDenylist: [/^\/home/, /^\/brain/],
       },
     }),
   ],
