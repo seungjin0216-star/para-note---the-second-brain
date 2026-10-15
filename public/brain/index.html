@@ -71,6 +71,29 @@ textarea.fld{resize:vertical;min-height:80px;line-height:1.5}
 .lbl{font-size:13px;color:var(--muted);margin:14px 2px 2px;font-weight:700}
 .note{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted);margin-top:12px}
 .worry{border-left:4px solid var(--warm)}.worry.ok{border-left-color:var(--done)}
+.acc{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:10px;overflow:hidden}
+.acc>button.hd{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:14px;text-align:left;font-weight:700}
+.acc>button.hd .n{margin-left:auto;font-size:13px;color:var(--muted);font-weight:600}
+.acc>button.hd::after{content:"›";color:var(--muted);font-size:20px;transition:transform .25s}
+.acc.open>button.hd::after{transform:rotate(90deg)}
+.acc .bd{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}.acc.open .bd{grid-template-rows:1fr}
+.acc .bd>div{overflow:hidden}.acc .bd .row:first-child{border-top:1px solid var(--line)}
+.app{display:flex;align-items:center;gap:10px;position:relative;transition:transform .15s}
+.app img{width:44px;height:44px;border-radius:11px;flex:none;box-shadow:0 1px 3px #0002}
+.app .dt{position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--beef)}
+.app[aria-pressed=true]{transform:translateY(-2px);box-shadow:0 6px 16px #0001}
+.panel{grid-column:1/-1;background:var(--surface);border:1.5px solid var(--accent);border-radius:16px;padding:6px 0 10px;animation:drop .32s cubic-bezier(.2,.8,.2,1);transform-origin:top}
+@keyframes drop{from{opacity:0;transform:translateY(-10px) scaleY(.96)}to{opacity:1;transform:none}}
+.panel h4{margin:12px 14px 4px;font-size:14px;display:flex;align-items:center;gap:6px}
+.panel .row{padding:11px 14px}
+.ib{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);font-size:16px;flex:none}
+.ib.ok{border-color:var(--done);color:var(--done)}.ib.back{color:var(--beef)}
+.mini{border:0;background:none;color:var(--muted);font-size:13px;padding:8px 14px;text-decoration:underline}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.plan .t{font-weight:800;font-size:17px;display:flex;align-items:center;gap:8px}.plan .why{color:var(--muted);font-size:14px;margin-top:4px}
+.bar{height:6px;background:var(--soft);border-radius:4px;overflow:hidden;margin:10px 0 4px}.bar i{display:block;height:100%;background:var(--done)}
+.vision{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#000));color:#fff;border-radius:18px;padding:16px;margin-top:8px}
+.vision small{opacity:.8}.vision b{display:block;font-size:19px;margin-top:4px;line-height:1.4}
 .screen{display:none}.screen.on{display:block}
 .toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#24323A;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s;z-index:20;pointer-events:none;max-width:90%}
 .toast.show{opacity:1}
@@ -82,9 +105,9 @@ img.ph{max-width:100%;border-radius:12px;margin-top:8px}
 <main id="app"><div class="empty">불러오는 중…</div></main>
 <button class="fab" id="fab" hidden aria-label="빠른 기록">＋</button>
 <nav id="nav" hidden>
-  <button data-s="today" aria-pressed="true"><b>📅</b>오늘</button>
+  <button data-s="today" aria-pressed="true"><b>📅</b>스케줄</button>
   <button data-s="apps"><b>📱</b>앱</button>
-  <button data-s="todo"><b>✅</b>할 일</button>
+  <button data-s="plan"><b>🎯</b>계획</button>
   <button data-s="log"><b>💭</b>기록</button>
 </nav>
 <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
@@ -106,8 +129,8 @@ const KIND = { worry: '💭 고민', idea: '💡 아이디어', todo: '✅ 할 �
 const ALARMS = [[0, '정시'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전'], ['d9', '하루 전 오전 9시']];
 const alarmText = a => typeof a === 'string' && a.includes('T') ? a.slice(5, 16).replace('T', ' ').replace('-', '/') : (ALARMS.find(x => x[0] === a) || [, a])[1];
 
-const D = { items: {}, issues: {}, events: {}, notes: {}, homeEv: {} };
-let UID = null, DB = null, cur = 'today', today = C.kst().date, sel = today, month = today.slice(0, 7), appSel = 'staff', issueF = 'all', noteF = 'all';
+const D = { items: {}, issues: {}, events: {}, notes: {}, homeEv: {}, plans: {} };
+let UID = null, DB = null, cur = 'today', today = C.kst().date, sel = today, month = today.slice(0, 7), appSel = '', issueF = 'all', noteF = 'all';
 
 /* ── 저장소 ── */
 function demo() {
@@ -116,11 +139,15 @@ function demo() {
   D.issues = { i1: { id: 'i1', app: 'staff', text: '업체 휴무 넣은 것이 바로 안 보임', status: 'new', at: now }, i2: { id: 'i2', app: 'staff', text: '마감 대분류 색칠', status: 'check', note: '소스류·찬냉장고 등 6색 · v17', at: now }, i3: { id: 'i3', app: 'owner', text: '휴무 알림 19시', status: 'check', note: '직원·사장 둘 다 19:00 · 「~까지」 표시', at: now }, i4: { id: 'i4', app: 'alba', text: '급여 화면 느림', status: 'new', at: now } };
   D.events = { e1: { id: 'e1', title: '세무사 서류 보내기', date: today, time: '15:00', alarms: [0, 60] }, e2: { id: 'e2', title: '미락 휴무 확인 전화', date: A(2), time: '', alarms: ['d9'] } };
   D.homeEv = { h1: { id: 'h1', title: '두리 병원', date: today, time: '19:00', who: 'we' }, h2: { id: 'h2', title: '장보기', date: A(3), time: '', who: 'we' } };
+  D.plans = { main: { id: 'main', vision: '내 가게 시스템을 다른 가게에도 파는 사장', updated: today, plans: [
+    { id: 'a', title: '가게 운영 자동화 마무리', status: '진행 중', why: '내가 없어도 하루가 돌아가게', steps: [{ t: '직원앱 마감·발주 안정', d: true }, { t: '사장앱 알림으로 하루 점검', d: false }, { t: '원당에도 같은 앱', d: false }] },
+    { id: 'b', title: '앱 팔기 (수익화)', status: '구상', why: '백석에서 된 것을 다른 사장님께', steps: [{ t: '새 매장 세팅 반나절 안에', d: false }, { t: '첫 고객 1곳', d: false }] }],
+    reviews: [{ date: '2026-10-14', text: '제2의뇌를 다시 쓰기로 — 앱 판·달력·고민 기록' }] } };
   D.notes = { n1: { id: 'n1', kind: 'worry', text: '알바 한 명 더 뽑을까, 내가 더 들어갈까', at: now - 864e5, solved: false }, n2: { id: 'n2', kind: 'worry', text: '월요일 발주가 바로 나가버림', at: now - 3 * 864e5, solved: true, how: '화요일 20:30 예약을 서버에 다시 넣음 (Claude)', from: 'mac' }, n3: { id: 'n3', kind: 'idea', text: '단골 손님 생일 쿠폰', at: now } };
   DB = { put: async (c, id, v) => { D[c][id] = { ...(D[c][id] || {}), ...v, id }; render(); }, add: async (c, v) => { const id = 'x' + Date.now(); D[c][id] = { ...v, id }; render(); return id; } };
   render();
 }
-const MAP = { issues: 'brain_issues', events: 'brain_events', notes: 'brain_notes', items: 'items' };
+const MAP = { issues: 'brain_issues', events: 'brain_events', notes: 'brain_notes', items: 'items', plans: 'brain_plans' };
 async function live() {
   const cfg = await (await fetch(API + '?a=config')).json();
   if (!cfg.apiKey) throw new Error('서버 설정을 못 받았습니다');
@@ -158,15 +185,11 @@ function render() {
   today = C.kst().date;
   $('#sub').textContent = `${+today.slice(5, 7)}월 ${+today.slice(8)}일 ${DAY[C.wdOf(today)]}요일`;
   $('#nav').hidden = false; $('#fab').hidden = false;
-  const 확인 = 이슈().filter(x => x.status === 'check').length;
-  $('#nav [data-s="apps"]').innerHTML = `<b>📱</b>앱${확인 ? '<i></i>' : ''}`;
-  $('#app').innerHTML = { today: rToday, apps: rApps, todo: rTodo, log: rLog }[cur]();
-}
-function 확인카드() {
-  const xs = 이슈().filter(x => x.status === 'check');
-  if (!xs.length) return '';
-  return `<div class="hero"><b>🔎 확인해 주세요 · ${xs.length}건</b>${xs.map(x => { const a = APPS.find(a => a[0] === x.app) || ['', '📱', x.app];
-    return `<div class="r"><div style="flex:1;min-width:0"><b style="font-size:15px">${a[1]} ${esc(x.text)}</b>${x.note ? `<small>🤖 ${esc(x.note)}</small>` : ''}</div><button class="b-ok" data-act="okIssue" data-id="${x.id}">완료</button><button class="b-no" data-act="noIssue" data-id="${x.id}">아직</button></div>`; }).join('')}</div>`;
+  /* 🔔 26-10-15 「확인해 주세요」 큰 띠를 없앰 — 사장님 「나오자마자 너무 크게 그것만 보임 · 오늘·앱 둘 다 똑같이 나와 차이를 못 느낌」
+     → 대신 앱 탭 아이콘에 작은 빨간 점 · 앱 카드 모서리에 점 (문제 발생이나 추적 확인이 있을 때) */
+  const 볼것 = 이슈().some(x => x.status !== 'done');
+  $('#nav [data-s="apps"]').innerHTML = `<b>📱</b>앱${볼것 ? '<i></i>' : ''}`;
+  $('#app').innerHTML = { today: rToday, apps: rApps, plan: rPlan, log: rLog }[cur]();
 }
 function 달력() {
   const [y, m] = month.split('-').map(Number), first = `${month}-01`, start = C.addDays(first, -C.wdOf(first));
@@ -179,28 +202,56 @@ function 달력() {
   return `<div class="card"><div class="calh"><button data-act="mon" data-d="-1">‹</button><b>${y}년 ${m}월</b><button data-act="mon" data-d="1">›</button></div><div class="cal">${h}</div></div>`;
 }
 const 일정줄 = (e, s) => `<button class="row ev ${e._home ? 'hm' : ''}" data-act="${e._home ? 'homeEv' : 'editEv'}" data-id="${e.id}"><div class="m">${e._home ? '🏠 ' : ''}${esc(e.title)}<small>${e.time || '종일'}${e._home ? ' · 우리집' : ''}${e.repeat && e.repeat.type && e.repeat.type !== 'none' ? ' · 반복' : ''}</small></div>${(e.alarms || []).length ? `<span class="bell">🔔 ${e.alarms.map(alarmText).join(' · ')}</span>` : ''}</button>`;
+/* 📅 스케줄 = 오늘 + 할 일 (26-10-15 사장님 「할 일 탭을 오늘과 통합시켜서 스케줄로」 · 「개인에 관련된 할 일」 · 「다 펼치지 않고」) */
+const 앱프로젝트 = t => /웹앱오류|통합어플/.test(String(t));
+const 열린 = new Set(JSON.parse(localStorage.getItem('brain-open') || '[]'));
 function rToday() {
-  const es = 그날(sel), td = 할일들().slice(0, 3), 새 = APPS.map(a => [a, 이슈().filter(x => x.app === a[0] && x.status === 'new').length]).filter(x => x[1]);
-  return 확인카드() + `<h2>📅 달력</h2>` + 달력()
+  const es = 그날(sel);
+  const ps = Object.values(D.items).filter(x => x.type === 'project' && !x.off && !앱프로젝트(x.title)).map(p => ({ p, open: (p.checks || []).filter(c => !c.d) })).filter(x => x.open.length);
+  return `<h2>📅 달력</h2>` + 달력()
     + `<h2>${sel === today ? '오늘' : C.label(sel)} 일정 <button data-act="newEv" data-d="${sel}">＋ 일정</button></h2><div class="card">${es.map(e => 일정줄(e, sel)).join('') || '<div class="empty">일정 없음</div>'}</div>`
-    + `<h2>할 일 TOP 3 <button data-act="go" data-s="todo">전체 ›</button></h2><div class="card">${td.map(c => `<button class="row" data-act="chk" data-pid="${c.pid}" data-cid="${c.id}"><span class="chk">✓</span><div class="m">${esc(c.t)}<small>${esc(c.proj)}</small></div></button>`).join('') || '<div class="empty">밀린 할 일 없음 ✨</div>'}</div>`
-    + (새.length ? `<h2>🚦 새 문제가 있는 앱</h2><div class="card">${새.map(([a, n]) => `<button class="row" data-act="app" data-a="${a[0]}"><div class="m">${a[1]} ${a[2]}</div><span class="tag t-new">새로 ${n}</span></button>`).join('')}</div>` : '');
+    + `<h2>할 일</h2>` + (ps.map(({ p, open }) => `<div class="acc ${열린.has(p.id) ? 'open' : ''}" data-pid="${p.id}"><button class="hd" data-act="acc" data-pid="${p.id}">${esc(p.title)}<span class="n">${open.length}</span></button>
+      <div class="bd"><div>${open.map(c => `<button class="row" data-act="chk" data-pid="${p.id}" data-cid="${c.id}"><span class="chk">✓</span><div class="m">${esc(c.t)}</div></button>`).join('')}<button class="row" data-act="addTodo" data-pid="${p.id}"><div class="m" style="color:var(--accent);font-weight:700">＋ 할 일 넣기</div></button></div></div></div>`).join('') || '<div class="card"><div class="empty">밀린 할 일 없음 ✨</div></div>')
+    + `<p class="note">🗄 옛 영역·자료함·보관은 접어 두었습니다 (지우지 않음) · <a href="/?old=1">옛 화면</a></p>`;
+}
+/* 📱 앱 — 카드 = 홈 화면 아이콘 · 누르면 그 줄 바로 아래로 펼침 (26-10-15)
+   상태는 둘만 보임: 🔴 문제 발생(new·doing) · 🔎 추적 확인(check = Claude 가 고침 · 지켜보기) · 완료는 작게 */
+let 완료보기 = false;
+function 앱판(k) {
+  const xs = 이슈().filter(x => x.app === k);
+  const 문제 = xs.filter(x => x.status === 'new' || x.status === 'doing'), 추적 = xs.filter(x => x.status === 'check'), 끝 = xs.filter(x => x.status === 'done');
+  const 줄 = (x, btns) => `<div class="row"><button class="m" style="border:0;background:none;text-align:left;padding:0" data-act="issue" data-id="${x.id}">${esc(x.text)}<small>${x.note ? '🤖 ' + esc(x.note) : new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.photo ? ' · 📷' : ''}${x.back ? ' · ↩ ' + esc(x.back) : ''}</small></button>${btns}</div>`;
+  return `<div class="panel">
+    <h4>🔴 문제 발생 <span class="tag t-new">${문제.length}</span><button class="mini" style="margin-left:auto;text-decoration:none;color:var(--accent);font-weight:700" data-act="newIssue">＋ 적기</button></h4>
+    ${문제.map(x => 줄(x, '')).join('') || '<div class="empty" style="padding:8px">없음</div>'}
+    <h4>🔎 추적 확인 <span class="tag t-check">${추적.length}</span></h4>
+    ${추적.map(x => 줄(x, `<button class="ib ok" data-act="okIssue" data-id="${x.id}" aria-label="완료">✓</button><button class="ib back" data-act="noIssue" data-id="${x.id}" aria-label="다시 문제 발생">↩</button>`)).join('') || '<div class="empty" style="padding:8px">없음</div>'}
+    <button class="mini" data-act="doneToggle">완료 ${끝.length} ${완료보기 ? '접기' : '보기'}</button>
+    ${완료보기 ? 끝.map(x => 줄(x, `<button class="ib back" data-act="reopen" data-id="${x.id}" aria-label="다시 문제 발생">↩</button>`)).join('') : ''}
+  </div>`;
 }
 function rApps() {
-  const xs = 이슈().filter(x => x.app === appSel && (issueF === 'all' ? x.status !== 'done' : x.status === issueF));
-  const a = APPS.find(a => a[0] === appSel);
-  return 확인카드() + `<h2>쓰고 있는 앱</h2><div class="apps">${APPS.map(([k, e, n]) => `<button class="app" data-act="app" data-a="${k}" aria-pressed="${k === appSel}">${e} ${n}</button>`).join('')}</div>
-    <h2>${a[1]} ${a[2]} <button data-act="newIssue">＋ 문제 적기</button></h2>
-    <div class="chips" style="margin-bottom:8px">${[['all', '진행 중'], ['new', '새로'], ['doing', '작업 중'], ['check', '확인해 주세요'], ['done', '완료']].map(([k, l]) => `<button data-act="issueF" data-f="${k}" aria-pressed="${k === issueF}">${l}</button>`).join('')}</div>
-    <div class="card">${xs.map(x => `<button class="row" data-act="issue" data-id="${x.id}"><div class="m">${esc(x.text)}<small>${new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.photo ? ' · 📷' : ''}${x.note ? ' · 🤖 ' + esc(x.note) : ''}</small></div><span class="tag ${ST[x.status || 'new'][1]}">${ST[x.status || 'new'][0]}</span></button>`).join('') || '<div class="empty">없음</div>'}</div>
-    <div class="note">적어 두면 다음에 Claude 가 자비스로 열 때 가져갑니다. 고치면 「확인해 주세요」로 바뀌고 🤖 한 줄이 붙습니다. 완료 / 아직.</div>`;
+  let h = '', i = 0;
+  APPS.forEach(([k, e, n], idx) => {
+    const 점 = 이슈().some(x => x.app === k && x.status !== 'done');
+    h += `<button class="app" data-act="app" data-a="${k}" aria-pressed="${k === appSel}"><img src="icons/${k}.png" alt="">${n}${점 ? '<span class="dt"></span>' : ''}</button>`;
+    if (idx % 2 === 1 && APPS.slice(idx - 1, idx + 1).some(a => a[0] === appSel)) h += 앱판(appSel);
+  });
+  return `<h2>쓰고 있는 앱</h2><div class="apps">${h}</div>
+    <p class="note">카드를 누르면 그 앱의 문제가 아래로 펼쳐집니다. ✓ 확인 끝 · ↩ 다시 문제 발생</p>`;
 }
-function rTodo() {
-  const ps = Object.values(D.items).filter(x => x.type === 'project' && !x.off).sort((a, b) => String(a.title).includes('웹앱오류') - String(b.title).includes('웹앱오류'));
-  const 숨김 = Object.values(D.items).filter(x => x.type && x.type !== 'project').length;
-  return ps.map(p => { const open = (p.checks || []).filter(c => !c.d); if (!open.length) return '';
-    return `<h2>${esc(p.title)} <button data-act="addTodo" data-pid="${p.id}">＋</button></h2><div class="card">${open.map(c => `<button class="row" data-act="chk" data-pid="${p.id}" data-cid="${c.id}"><span class="chk">✓</span><div class="m">${esc(c.t)}</div></button>`).join('')}</div>`; }).join('')
-    + `<p class="note">🗄 옛 영역·자료함·보관 ${숨김}개는 접어 두었습니다 (지우지 않음) · <a href="/?old=1">옛 화면</a></p>`;
+/* 🎯 계획 (26-10-15) — 사장님 「내 비전에 대한 계획 … 클로드와의 대화를 통해 말해지는 것을 기준으로 … 항상 깔끔하게」
+   정본은 Claude 가 관리하는 md (저장소 밖) → tools/brain.py plan push 로 이 문서(brain_plans/main)에 · 체크는 여기서 */
+function rPlan() {
+  const P = D.plans.main;
+  if (!P) return `<div class="vision"><small>🎯 비전</small><b>아직 비어 있습니다</b></div><p class="note">계획 대화방에서 Claude 와 이야기하면 여기 정리됩니다. 계획은 여러 개를 나란히 둡니다 (가게 · 앱 사업 · 나 …).</p>`;
+  const plans = P.plans || [];
+  return `<div class="vision"><small>🎯 비전 · ${esc(P.updated || '')} 정리</small><b>${esc(P.vision || '')}</b></div>`
+    + plans.map((pl, pi) => { const st = pl.steps || [], dn = st.filter(x => x.d).length, pct = st.length ? Math.round(dn / st.length * 100) : 0;
+      return `<div class="acc ${열린.has('pl' + pi) ? 'open' : ''}"><button class="hd" data-act="acc" data-pid="pl${pi}">${esc(pl.title)}<span class="n">${pl.status ? esc(pl.status) + ' · ' : ''}${dn}/${st.length}</span></button>
+        <div class="bd"><div style="padding:0 14px 12px">${pl.why ? `<div class="why">왜 · ${esc(pl.why)}</div>` : ''}<div class="bar"><i style="width:${pct}%"></i></div>
+        ${st.map((x, si) => `<button class="row" style="padding:10px 0" data-act="planStep" data-pi="${pi}" data-si="${si}"><span class="chk ${x.d ? 'on' : ''}">✓</span><div class="m" style="${x.d ? 'color:var(--muted);text-decoration:line-through' : ''}">${esc(x.t)}</div></button>`).join('')}</div></div></div>`; }).join('')
+    + ((P.reviews || []).length ? `<h2>돌아보기</h2><div class="card">${P.reviews.slice().reverse().map(r => `<div class="row"><div class="m">${esc(r.text)}<small>${esc(r.date)}</small></div></div>`).join('')}</div>` : '');
 }
 function rLog() {
   const xs = Object.values(D.notes).filter(x => !x.off && (noteF === 'all' || x.kind === noteF || (noteF === 'open' && x.kind === 'worry' && !x.solved))).sort((a, b) => (b.at || 0) - (a.at || 0));
@@ -233,14 +284,14 @@ function drawEv() {
 }
 const 읽기 = () => { if ($('#evT')) { F.title = $('#evT').value; F.date = $('#evD').value || F.date; F.time = $('#evH').value; } };
 function issueSheet(x, keep) {
-  if (!keep) F = x ? { ...x } : { app: appSel, text: '', status: 'new', photo: '' };
+  if (!keep) F = x ? { ...x } : { app: appSel || 'staff', text: '', status: 'new', photo: '' };
   x = F.id ? F : null;
   openSheet(`<h3>📱 ${x ? '앱 문제' : '앱 문제 적기'}</h3>
     <div class="chips">${APPS.map(([k, e, n]) => `<button data-act="iApp" data-k="${k}" aria-pressed="${F.app === k}">${e} ${n}</button>`).join('')}</div>
     <textarea class="fld" id="iT" placeholder="무엇이 문제인지 · 고칠 것 한 줄">${esc(F.text)}</textarea>
     <label class="big sec" style="display:block;text-align:center">📷 스크린샷 ${F.photo ? '바꾸기' : '붙이기'}<input type="file" accept="image/*" id="iP" hidden></label>
     ${F.photo ? `<img class="ph" src="${F.photo}" alt="">` : ''}
-    ${x ? `<div class="lbl">상태</div><div class="chips">${Object.entries(ST).map(([k, [l]]) => `<button data-act="iSt" data-k="${k}" aria-pressed="${F.status === k}">${l}</button>`).join('')}</div>${F.note ? `<div class="note">🤖 ${esc(F.note)}</div>` : ''}` : ''}
+    ${x ? `<div class="lbl">상태</div><div class="chips">${[['new', '🔴 문제 발생'], ['check', '🔎 추적 확인'], ['done', '✅ 완료']].map(([k, l]) => `<button data-act="iSt" data-k="${k}" aria-pressed="${F.status === k || (k === 'new' && F.status === 'doing')}">${l}</button>`).join('')}</div>${F.note ? `<div class="note">🤖 ${esc(F.note)}</div>` : ''}` : ''}
     <button class="big" data-act="saveIssue">${x ? '저장' : '넣기'}</button>${x ? '<button class="big sec" data-act="offIssue">빼기 (지우지 않음)</button>' : ''}`);
 }
 function noteSheet(x) {
@@ -256,7 +307,7 @@ let QK = 'worry';
 function quickSheet() {
   openSheet(`<h3>✏️ 빠른 기록</h3>
     <div class="chips">${[['worry', '💭 고민'], ['idea', '💡 아이디어'], ['todo', '✅ 할 일'], ['issue', '📱 앱 문제'], ['event', '📅 일정'], ['log', '📝 메모']].map(([k, l]) => `<button data-act="qk" data-k="${k}" aria-pressed="${QK === k}">${l}</button>`).join('')}</div>
-    ${QK === 'issue' ? `<div class="chips" style="margin-top:8px">${APPS.map(([k, e, n]) => `<button data-act="iApp" data-k="${k}" aria-pressed="${appSel === k}">${e} ${n}</button>`).join('')}</div>` : ''}
+    ${QK === 'issue' ? `<div class="chips" style="margin-top:8px">${APPS.map(([k, e, n]) => `<button data-act="iApp" data-k="${k}" aria-pressed="${(appSel || 'staff') === k}">${e} ${n}</button>`).join('')}</div>` : ''}
     ${QK === 'todo' ? `<select class="fld" id="qP">${Object.values(D.items).filter(x => x.type === 'project' && !x.off).map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('')}</select>` : ''}
     <textarea class="fld" id="qT" placeholder="${QK === 'worry' ? '지금 고민 한 줄 — 가볍든 무겁든' : '한 줄이면 됩니다'} · 🎤 키보드 마이크로 말해도 됩니다"></textarea>
     <button class="big" data-act="qSave">넣기</button>`);
@@ -287,7 +338,7 @@ document.addEventListener('click', async e => {
     case 'offEv': await DB.put('events', F.id, { off: true }); closeSheet(); return toast('뺐습니다');
     case 'chk': { const p = D.items[b.dataset.pid]; const checks = (p.checks || []).map(c => c.id === b.dataset.cid ? { ...c, d: true } : c); await DB.put('items', p.id, { checks }); return toast('✅ 완료 — 할 일 탭에서 안 보입니다'); }
     case 'addTodo': { const t = prompt('할 일 한 줄'); if (!t) return; const p = D.items[b.dataset.pid]; await DB.put('items', p.id, { checks: [...(p.checks || []), { id: String(Date.now()), t, d: false }] }); return toast('넣었습니다'); }
-    case 'app': appSel = b.dataset.a; issueF = 'all'; if (cur !== 'apps') { cur = 'apps'; document.querySelectorAll('#nav button').forEach(x => x.setAttribute('aria-pressed', x.dataset.s === 'apps')); } return render();
+    case 'app': appSel = (appSel === b.dataset.a && cur === 'apps') ? '' : b.dataset.a; 완료보기 = false; if (cur !== 'apps') { cur = 'apps'; document.querySelectorAll('#nav button').forEach(x => x.setAttribute('aria-pressed', x.dataset.s === 'apps')); } return render();
     case 'issueF': issueF = b.dataset.f; return render();
     case 'newIssue': return issueSheet(null);
     case 'issue': return issueSheet(D.issues[id]);
@@ -296,8 +347,12 @@ document.addEventListener('click', async e => {
     case 'saveIssue': { F.text = $('#iT').value.trim(); if (!F.text) return toast('한 줄 적어 주세요'); const v = { app: F.app, text: F.text, status: F.status || 'new', photo: F.photo || '' };
       if (F.id) await DB.put('issues', F.id, v); else await DB.add('issues', { ...v, at: Date.now() }); appSel = F.app; closeSheet(); return toast('📱 적었습니다'); }
     case 'offIssue': await DB.put('issues', F.id, { off: true }); closeSheet(); return toast('뺐습니다');
-    case 'okIssue': await DB.put('issues', id, { status: 'done', doneAt: Date.now() }); return toast('✅ 완료');
-    case 'noIssue': { const why = prompt('무엇이 아직인가요? (한 줄 · 비워도 됨)') ; await DB.put('issues', id, { status: 'doing', back: why || '' }); return toast('🔁 다시 작업 중으로'); }
+    case 'okIssue': await DB.put('issues', id, { status: 'done', doneAt: Date.now() }); return toast('✅ 확인 끝');
+    case 'reopen': await DB.put('issues', id, { status: 'new', reopenAt: Date.now() }); return toast('🔴 다시 문제 발생으로');
+    case 'doneToggle': 완료보기 = !완료보기; return render();
+    case 'acc': { const k2 = b.dataset.pid, box = b.closest('.acc'); box.classList.toggle('open'); box.classList.contains('open') ? 열린.add(k2) : 열린.delete(k2); try { localStorage.setItem('brain-open', JSON.stringify([...열린])); } catch (_) {} return; }
+    case 'planStep': { const P = D.plans.main, pl = JSON.parse(JSON.stringify(P.plans)); const x = pl[+b.dataset.pi].steps[+b.dataset.si]; x.d = !x.d; await DB.put('plans', 'main', { plans: pl, checkedAt: Date.now() }); return; }
+    case 'noIssue': await DB.put('issues', id, { status: 'new', back: '다시 생김' }); return toast('🔴 다시 문제 발생으로');
     case 'noteF': noteF = b.dataset.f; return render();
     case 'note': return noteSheet(D.notes[id]);
     case 'saveNote': { const v = { text: $('#nT').value }; if ($('#nH')) v.how = $('#nH').value; await DB.put('notes', F.id, v); closeSheet(); return toast('저장했습니다'); }
@@ -305,7 +360,7 @@ document.addEventListener('click', async e => {
     case 'offNote': await DB.put('notes', F.id, { off: true }); closeSheet(); return toast('뺐습니다');
     case 'qk': { const t = ($('#qT') || {}).value || ''; QK = b.dataset.k; if (QK === 'event') { closeSheet(); evSheet(null); setTimeout(() => { if ($('#evT')) $('#evT').value = t; }, 30); return; } quickSheet(); $('#qT').value = t; return; }
     case 'qSave': { const t = $('#qT').value.trim(); if (!t) return toast('한 줄 적어 주세요');
-      if (QK === 'issue') await DB.add('issues', { app: appSel, text: t, status: 'new', at: Date.now() });
+      if (QK === 'issue') await DB.add('issues', { app: appSel || 'staff', text: t, status: 'new', at: Date.now() });
       else if (QK === 'todo') { const p = D.items[$('#qP').value]; await DB.put('items', p.id, { checks: [...(p.checks || []), { id: String(Date.now()), t, d: false }] }); }
       else await DB.add('notes', { kind: QK, text: t, at: Date.now(), solved: false, from: 'phone' });
       closeSheet(); return toast({ worry: '💭 고민을 남겼습니다', idea: '💡 남겼습니다', todo: '✅ 할 일에 넣었습니다', issue: '📱 앱 판에 넣었습니다', log: '📝 남겼습니다' }[QK]); }

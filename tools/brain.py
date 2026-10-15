@@ -13,11 +13,17 @@
     python3 tools/brain.py solved <id> "어떻게 넘겼나"   고민 풀림
     python3 tools/brain.py log "메모 한 줄"          📝
     python3 tools/brain.py notes                  기록 보기
+    python3 tools/brain.py plan pull              🎯 앱에서 체크한 것을 계획 md 에 옮김   ← md 고치기 전에 반드시
+    python3 tools/brain.py plan push              🎯 계획 md → 앱 (체크는 둘 중 하나라도 ✓ 면 ✓)
+
+🎯 계획 md 는 저장소 밖 ~/제2의뇌_계획/계획.md (저장소가 전부 Public 이라 — 사장님 비전은 공개하지 않음)
 
 ⚠️ 「완료」는 Claude 가 하지 않습니다. 사장님이 앱에서 「완료」를 누릅니다 (check 까지만)
 ⚠️ 지우는 명령은 없습니다 (CLAUDE.md ④) — 앱에서 「빼기」 = off:true
 ⚠️ 고민(worry)은 사장님이 대화에서 실제로 말한 것만. 제 추측을 고민으로 적지 않습니다
 """
+import os
+import re
 import sys
 import time
 
@@ -30,11 +36,60 @@ ST = {"new": "새로", "doing": "작업 중", "check": "확인해 주세요", "d
 
 
 def val(v):
+    if isinstance(v, list):
+        return {"arrayValue": {"values": [val(x) for x in v]}}
+    if isinstance(v, dict):
+        return {"mapValue": {"fields": {k: val(x) for k, x in v.items()}}}
     if isinstance(v, bool):
         return {"booleanValue": v}
     if isinstance(v, (int, float)):
         return {"integerValue": str(int(v))}
     return {"stringValue": str(v)}
+
+
+def unval(f):
+    t, v = list(f.items())[0]
+    if t == "arrayValue":
+        return [unval(x) for x in v.get("values", [])]
+    if t == "mapValue":
+        return {k: unval(x) for k, x in v.get("fields", {}).items()}
+    if t == "integerValue":
+        return int(v)
+    return v
+
+
+PLAN_MD = os.path.expanduser("~/제2의뇌_계획/계획.md")
+
+
+def plan_parse(text):
+    """# 비전 / ## 계획 [상태] / 왜: / - [ ] 단계 / # 돌아보기 / - 날짜 · 글"""
+    out = {"vision": "", "plans": [], "reviews": []}
+    sec, cur = None, None
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not line.strip() or line.strip().startswith("<!--") or line.strip().startswith(">"):
+            continue
+        if line.startswith("# "):
+            sec = line[2:].strip(); cur = None
+            continue
+        if line.startswith("## ") and sec and "계획" in sec:
+            m = re.match(r"##\s+(.*?)\s*(?:\[(.+?)\])?$", line)
+            cur = {"title": m.group(1), "status": m.group(2) or "", "why": "", "steps": []}
+            out["plans"].append(cur)
+            continue
+        if sec and "비전" in sec:
+            out["vision"] = (out["vision"] + " " + line.strip()).strip()
+        elif sec and "계획" in sec and cur is not None:
+            m = re.match(r"\s*-\s*\[( |x|X)\]\s*(.+)", line)
+            if m:
+                cur["steps"].append({"t": m.group(2).strip(), "d": m.group(1).lower() == "x"})
+            elif line.strip().startswith("왜:"):
+                cur["why"] = line.strip()[2:].strip()
+        elif sec and "돌아보기" in sec:
+            m = re.match(r"\s*-\s*(\d{4}-\d{2}-\d{2})\s*[·:-]?\s*(.+)", line)
+            if m:
+                out["reviews"].append({"date": m.group(1), "text": m.group(2).strip()})
+    return out
 
 
 def get(fields, k, dv=""):
@@ -121,6 +176,31 @@ def main():
             k = get(f, "kind")
             mark = ("✅" if get(f, "solved") else "💭") if k == "worry" else {"idea": "💡", "log": "📝", "todo": "✅"}.get(k, "·")
             print(f"[{d['name'].split('/')[-1][:6]}] {mark} {get(f, 'text')}" + (f"  → {get(f, 'how')}" if get(f, "how") else "") + ("  🖥" if get(f, "from") == "mac" else ""))
+    elif cmd == "plan":
+        url = f"{b.col('brain_plans')}/main"
+        r = requests.get(url, headers=b.h, timeout=30)
+        app = {k: unval(v) for k, v in r.json().get("fields", {}).items()} if r.status_code == 200 else {}
+        app_done = {s["t"] for pl in app.get("plans", []) for s in pl.get("steps", []) if s.get("d")}
+        text = open(PLAN_MD, encoding="utf-8").read()
+        if a[1] == "pull":
+            n = [0]
+            def mark(m):
+                if m.group(2).strip() in app_done and m.group(1) == " ":
+                    n[0] += 1
+                    return m.group(0).replace("[ ]", "[x]", 1)
+                return m.group(0)
+            open(PLAN_MD, "w", encoding="utf-8").write(re.sub(r"-\s*\[( |x|X)\]\s*(.+)", mark, text))
+            print(f"앱에서 체크한 {n[0]}개를 md 에 옮김")
+        elif a[1] == "push":
+            P = plan_parse(text)
+            for pl in P["plans"]:
+                for st in pl["steps"]:
+                    st["d"] = st["d"] or st["t"] in app_done
+            P["updated"] = time.strftime("%Y-%m-%d")
+            fields = {k: val(v) for k, v in P.items()}
+            r = requests.patch(url, headers=b.h, json={"fields": fields}, timeout=30)
+            r.raise_for_status()
+            print(f"🎯 앱에 올림 — 계획 {len(P['plans'])}개 · 단계 {sum(len(p['steps']) for p in P['plans'])}개 · 돌아보기 {len(P['reviews'])}")
     else:
         print(__doc__)
 

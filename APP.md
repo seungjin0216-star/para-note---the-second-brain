@@ -32,6 +32,19 @@ Claude    tools/brain.py — issues · issue · doing · check(🔎+🤖 한 줄
 ⚠️ vite PWA 가 home/·brain/ 을 저장(precache)하지 않게 globIgnores (26-10-14) — 저장하면 폰에 옛 판이 남음
 ```
 
+### 26-10-15 개편 — 사장님 수정
+```
+「확인해 주세요」 큰 띠 뺌 — 「나오자마자 너무 크게 · 오늘·앱 둘 다 똑같이 나와 차이를 못 느낌」
+   → 대신 📱 앱 탭 아이콘 빨간 점 · 앱 카드 모서리 점
+탭        📅 스케줄 (오늘 + 할 일 합침 · 할 일은 프로젝트마다 접힘 · 앱 관련 프로젝트는 뺌)
+          📱 앱 (홈 화면 아이콘 · 카드 누르면 그 줄 바로 아래로 펼침)
+             🔴 문제 발생(new·doing) · 🔎 추적 확인(check · ✓ 확인 끝 / ↩ 다시 문제) · 「완료 N 보기」 작게 · 완료에서 ↩ 로 다시 꺼냄
+          🎯 계획 (비전 + 여러 계획 · 단계 체크) · 💭 기록
+아이콘     public/brain/icons/{staff,owner,alba,home}.png = 각 앱 apple-touch-icon 복사 (앱 아이콘 바뀌면 다시 복사)
+🎯 계획    정본 ~/제2의뇌_계획/계획.md (저장소 밖 · Public 이라) — 그 폴더 CLAUDE.md 가 「계획 대화방」 규칙
+          brain.py plan pull (앱 체크 → md) → md 고침 → plan push (md → brain_plans/main)
+```
+
 ## 0. ⚠️ 건드리기 전
 
 ```
