@@ -65,7 +65,25 @@ def unval(f):
 
 
 PLAN_MD = os.path.expanduser("~/제2의뇌_계획/계획.md")
-LOG_MD = os.path.expanduser("~/제2의뇌_계획/기록.md")   # Cowork 가 「# 새 기록」 아래에 한 줄씩 → sync 가 앱으로 옮기고 「# 앱에 들어감」 으로 내림 (지우지 않음)
+LOG_MD = os.path.expanduser("~/제2의뇌_계획/기록.md")
+TOPIC_DIR = os.path.expanduser("~/제2의뇌_계획/대화정리")   # 🗂 26-10-15 대화방마다 정리 파일 하나 → brain_topics (대제목 목록 · 누르면 내용)
+
+
+def topic_parse(path):
+    """# 제목 / 분류: 계획|기록 / 나머지는 그대로 (앱이 펼쳐 보여 줌)"""
+    text = open(path, encoding="utf-8").read()
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+    title, kind = "", "계획"
+    for ln in text.splitlines():
+        if ln.startswith("# ") and not title:
+            title = ln[2:].strip()
+        m = re.match(r"\s*분류\s*[:：]\s*(계획|기록)", ln)
+        if m:
+            kind = m.group(1)
+    one = re.search(r"##\s*한 줄 요약\s*\n+([^\n#]+)", text)
+    return {"title": title or os.path.basename(path)[:-3], "kind": kind, "md": text.strip()[:60000],
+            "summary": one.group(1).strip() if one else "", "file": os.path.basename(path),
+            "updated": time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(path)))}   # Cowork 가 「# 새 기록」 아래에 한 줄씩 → sync 가 앱으로 옮기고 「# 앱에 들어감」 으로 내림 (지우지 않음)
 
 
 def plan_parse(text):
@@ -221,6 +239,27 @@ def main():
                 new += [f"{l.strip()}  ← {time.strftime('%m/%d %H:%M')}" for l in moved]
                 open(LOG_MD, "w", encoding="utf-8").write("\n".join(new) + "\n")
             print(f"💭 기록 {len(moved)}줄 → 앱")
+        # 🗂 대화정리/*.md → brain_topics (파일 이름이 곧 id · 파일이 없어지면 off — 지우지 않음)
+        if os.path.isdir(TOPIC_DIR):
+            import hashlib
+            있는 = {}
+            for fn in sorted(os.listdir(TOPIC_DIR)):
+                if fn.endswith(".md") and not fn.startswith("_"):
+                    t = topic_parse(os.path.join(TOPIC_DIR, fn))
+                    tid = "t_" + hashlib.md5(fn.encode()).hexdigest()[:12]
+                    있는[tid] = t
+            앱 = {d["name"].split("/")[-1]: d for d in b.list("brain_topics")}
+            n = 0
+            for tid, t in 있는.items():
+                old = 앱.get(tid)
+                if old and get(old["fields"], "md") == t["md"] and get(old["fields"], "off") is not True:
+                    continue
+                requests.patch(f"{b.col('brain_topics')}/{tid}", headers=b.h, json={"fields": {k: val(v) for k, v in {**t, "off": False}.items()}}, timeout=30).raise_for_status()
+                n += 1
+            for tid, d in 앱.items():
+                if tid not in 있는 and get(d["fields"], "off") is not True:
+                    b.patch("brain_topics", tid, {"off": True})
+            print(f"🗂 대화정리 {len(있는)}개 (바뀐 것 {n})")
     elif cmd == "plan":
         url = f"{b.col('brain_plans')}/main"
         r = requests.get(url, headers=b.h, timeout=30)
