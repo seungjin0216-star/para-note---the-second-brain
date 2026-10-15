@@ -43,6 +43,10 @@ Claude    tools/brain.py — issues · issue · doing · check(🔎+🤖 한 줄
 아이콘     public/brain/icons/{staff,owner,alba,home}.png = 각 앱 apple-touch-icon 복사 (앱 아이콘 바뀌면 다시 복사)
 🎯 계획    정본 ~/제2의뇌_계획/계획.md (저장소 밖 · Public 이라) — 그 폴더 CLAUDE.md 가 「계획 대화방」 규칙
           brain.py plan pull (앱 체크 → md) → md 고침 → plan push (md → brain_plans/main)
+📋 일반 대화방 (26-10-15 · 사장님 「코드 말고 일반 대화방 … 토큰」) — claude.ai 프로젝트 + ~/제2의뇌_계획/대화방_지침.md
+          대화 끝 「정리해줘」 → 꼴(# 비전 · # 계획 · # 돌아보기 · # 기록) → 앱 🎯 「📥 붙여넣기」 → 미리 보기 → 넣기
+          계획은 통째로 바뀜(체크는 이름이 같으면 유지) · 돌아보기는 더함(같은 줄은 건너뜀) · 기록은 brain_notes 에 from 'chat'
+          다음 대화 시작 때 「📋 지금 계획 복사」 → 대화방에 붙여넣기
 ```
 
 ## 0. ⚠️ 건드리기 전
