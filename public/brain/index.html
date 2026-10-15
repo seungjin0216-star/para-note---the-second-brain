@@ -22,11 +22,14 @@
 <style>
 :root{--paper:#F4F6F5;--surface:#fff;--ink:#1C2529;--muted:#5E6B70;--line:#DCE2E0;--accent:#1F6F8B;--beef:#B3261E;--done:#2E7D4F;--warm:#A8741A;--home:#7C5CC4;--soft:#EEF2F1}
 @media (prefers-color-scheme:dark){:root{--paper:#12191C;--surface:#1B2428;--ink:#E8EEEC;--muted:#9AA8AC;--line:#2C383D;--accent:#5BB2D1;--beef:#E5675E;--done:#5BB585;--warm:#D9A44A;--home:#A98BEA;--soft:#222E33}}
-*{box-sizing:border-box}html,body{margin:0}body{background:var(--paper);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;word-break:keep-all;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:hidden;width:100%}
+/* 📐 26-10-15 사장님 「화면이 살짝 오른쪽으로 밀려진 느낌」 — 띄어쓰기 없는 긴 글(파일 이름·주소)이 줄을 밀어내지 않게 · 좌우 여백을 똑같이 */
+.m,.why,.note,.vision b,small{overflow-wrap:anywhere}
+img,textarea,input,select{max-width:100%}body{background:var(--paper);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;word-break:keep-all;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer}
-header{padding:calc(14px + env(safe-area-inset-top)) 16px 4px;display:flex;justify-content:space-between;align-items:flex-end;max-width:620px;margin:0 auto}
+header{padding:calc(14px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 4px max(16px,env(safe-area-inset-left));display:flex;justify-content:space-between;align-items:flex-end;max-width:620px;margin:0 auto}
 header h1{font-size:22px;margin:0}header small{color:var(--muted);font-size:13px}
-main{padding:0 16px 130px;max-width:620px;margin:0 auto}
+main{padding:0 max(16px,env(safe-area-inset-right)) 130px max(16px,env(safe-area-inset-left));max-width:620px;margin:0 auto}
 h2{font-size:14px;margin:20px 2px 8px;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;align-items:center}
 h2 button{border:0;background:none;color:var(--accent);font-size:14px;font-weight:700;padding:0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
@@ -85,6 +88,13 @@ textarea.fld{resize:vertical;min-height:80px;line-height:1.5}
 .panel{grid-column:1/-1;background:var(--surface);border:1.5px solid var(--accent);border-radius:16px;padding:6px 0 10px;animation:drop .32s cubic-bezier(.2,.8,.2,1);transform-origin:top}
 @keyframes drop{from{opacity:0;transform:translateY(-10px) scaleY(.96)}to{opacity:1;transform:none}}
 .panel h4{margin:12px 14px 4px;font-size:14px;display:flex;align-items:center;gap:6px}
+/* 🎨 26-10-15 사장님 「문제 발생과 추적 확인이 구분이 어려워 카드 부분에 색을 넣어서」 */
+.sec{margin:8px 10px 0;border-radius:14px;overflow:hidden;padding-bottom:4px}
+.sec h4{margin:0;padding:11px 12px 6px}
+.sec.bad{background:color-mix(in srgb,var(--beef) 9%,var(--surface));box-shadow:inset 4px 0 0 var(--beef)}
+.sec.trk{background:color-mix(in srgb,var(--accent) 9%,var(--surface));box-shadow:inset 4px 0 0 var(--accent)}
+.sec .row{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.sec .empty{padding:6px 12px 10px;text-align:left}
 .panel .row{padding:11px 14px}
 .ib{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);font-size:16px;flex:none}
 .ib.ok{border-color:var(--done);color:var(--done)}.ib.back{color:var(--beef)}
@@ -222,10 +232,10 @@ function 앱판(k) {
   const 문제 = xs.filter(x => x.status === 'new' || x.status === 'doing'), 추적 = xs.filter(x => x.status === 'check'), 끝 = xs.filter(x => x.status === 'done');
   const 줄 = (x, btns) => `<div class="row"><button class="m" style="border:0;background:none;text-align:left;padding:0" data-act="issue" data-id="${x.id}">${esc(x.text)}<small>${x.note ? '🤖 ' + esc(x.note) : new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.photo ? ' · 📷' : ''}${x.back ? ' · ↩ ' + esc(x.back) : ''}</small></button>${btns}</div>`;
   return `<div class="panel">
-    <h4>🔴 문제 발생 <span class="tag t-new">${문제.length}</span><button class="mini" style="margin-left:auto;text-decoration:none;color:var(--accent);font-weight:700" data-act="newIssue">＋ 적기</button></h4>
-    ${문제.map(x => 줄(x, '')).join('') || '<div class="empty" style="padding:8px">없음</div>'}
-    <h4>🔎 추적 확인 <span class="tag t-check">${추적.length}</span></h4>
-    ${추적.map(x => 줄(x, `<button class="ib ok" data-act="okIssue" data-id="${x.id}" aria-label="완료">✓</button><button class="ib back" data-act="noIssue" data-id="${x.id}" aria-label="다시 문제 발생">↩</button>`)).join('') || '<div class="empty" style="padding:8px">없음</div>'}
+    <div class="sec bad"><h4>🔴 문제 발생 <span class="tag t-new">${문제.length}</span><button class="mini" style="margin-left:auto;text-decoration:none;color:var(--accent);font-weight:700;padding:0" data-act="newIssue">＋ 적기</button></h4>
+    ${문제.map(x => 줄(x, '')).join('') || '<div class="empty">없음</div>'}</div>
+    <div class="sec trk"><h4>🔎 추적 확인 <span class="tag t-check">${추적.length}</span></h4>
+    ${추적.map(x => 줄(x, `<button class="ib ok" data-act="okIssue" data-id="${x.id}" aria-label="완료">✓</button><button class="ib back" data-act="noIssue" data-id="${x.id}" aria-label="다시 문제 발생">↩</button>`)).join('') || '<div class="empty">없음</div>'}</div>
     <button class="mini" data-act="doneToggle">완료 ${끝.length} ${완료보기 ? '접기' : '보기'}</button>
     ${완료보기 ? 끝.map(x => 줄(x, `<button class="ib back" data-act="reopen" data-id="${x.id}" aria-label="다시 문제 발생">↩</button>`)).join('') : ''}
   </div>`;
@@ -234,7 +244,7 @@ function rApps() {
   let h = '', i = 0;
   APPS.forEach(([k, e, n], idx) => {
     const 점 = 이슈().some(x => x.app === k && x.status !== 'done');
-    h += `<button class="app" data-act="app" data-a="${k}" aria-pressed="${k === appSel}"><img src="icons/${k}.png" alt="">${n}${점 ? '<span class="dt"></span>' : ''}</button>`;
+    h += `<button class="app" data-act="app" data-a="${k}" aria-pressed="${k === appSel}"><img src="icons/${k}.png" alt=""><span>${esc(n.replace(/\(.*\)/, ''))}${/\(/.test(n) ? `<small style="display:block;color:var(--muted);font-weight:600;font-size:13px">${esc(n.match(/\((.*)\)/)[1])}</small>` : ''}</span>${점 ? '<span class="dt"></span>' : ''}</button>`;
     if (idx % 2 === 1 && APPS.slice(idx - 1, idx + 1).some(a => a[0] === appSel)) h += 앱판(appSel);
   });
   return `<h2>쓰고 있는 앱</h2><div class="apps">${h}</div>
