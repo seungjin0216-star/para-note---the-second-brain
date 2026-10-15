@@ -280,7 +280,7 @@ function rPlan() {
 }
 function rPlan_() {
   const P = D.plans.main;
-  if (!P) return `<div class="vision"><small>🎯 비전</small><b>아직 비어 있습니다</b></div><p class="note">계획 대화방에서 Claude 와 이야기하면 여기 정리됩니다. 계획은 여러 개를 나란히 둡니다 (가게 · 앱 사업 · 나 …).</p>`;
+  if (!P || (!P.vision && !(P.plans || []).length)) return `<div class="vision"><small>🎯 비전</small><b>아직 비어 있습니다</b></div><p class="note">계획 대화방에서 Claude 와 이야기하면 여기 정리됩니다. 계획은 여러 개를 나란히 둡니다 (가게 · 앱 사업 · 나 …).</p>`;
   const plans = P.plans || [];
   return `<div class="vision"><small>🎯 비전 · ${esc(P.updated || '')} 정리</small><b>${esc(P.vision || '')}</b></div>`
     + plans.map((pl, pi) => { const st = pl.steps || [], dn = st.filter(x => x.d).length, pct = st.length ? Math.round(dn / st.length * 100) : 0;

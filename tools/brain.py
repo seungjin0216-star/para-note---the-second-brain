@@ -15,6 +15,7 @@
     python3 tools/brain.py notes                  기록 보기
     python3 tools/brain.py plan pull              🎯 앱에서 체크한 것을 계획 md 에 옮김   ← md 고치기 전에 반드시
     python3 tools/brain.py plan push              🎯 계획 md → 앱 (체크는 둘 중 하나라도 ✓ 면 ✓)
+    python3 tools/brain.py sync                   🔄 pull + push + 기록.md 새 줄 → 앱 (맥 자동 동기화가 부름)
 
 🎯 계획 md 는 저장소 밖 ~/제2의뇌_계획/계획.md (저장소가 전부 Public 이라 — 사장님 비전은 공개하지 않음)
 
@@ -59,15 +60,18 @@ def unval(f):
 
 
 PLAN_MD = os.path.expanduser("~/제2의뇌_계획/계획.md")
+LOG_MD = os.path.expanduser("~/제2의뇌_계획/기록.md")   # Cowork 가 「# 새 기록」 아래에 한 줄씩 → sync 가 앱으로 옮기고 「# 앱에 들어감」 으로 내림 (지우지 않음)
 
 
 def plan_parse(text):
     """# 비전 / ## 계획 [상태] / 왜: / - [ ] 단계 / # 돌아보기 / - 날짜 · 글"""
     out = {"vision": "", "plans": [], "reviews": []}
     sec, cur = None, None
+    # ⚠️ 26-10-15 여러 줄 <!-- … --> 안의 예시 줄을 진짜로 읽어 앱에 「계획 이름」이 들어간 적 있음 → 주석은 통째로 건너뜀
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     for raw in text.splitlines():
         line = raw.rstrip()
-        if not line.strip() or line.strip().startswith("<!--") or line.strip().startswith(">"):
+        if not line.strip() or line.strip().startswith(">"):
             continue
         if line.startswith("# "):
             sec = line[2:].strip(); cur = None
@@ -176,6 +180,38 @@ def main():
             k = get(f, "kind")
             mark = ("✅" if get(f, "solved") else "💭") if k == "worry" else {"idea": "💡", "log": "📝", "todo": "✅"}.get(k, "·")
             print(f"[{d['name'].split('/')[-1][:6]}] {mark} {get(f, 'text')}" + (f"  → {get(f, 'how')}" if get(f, "how") else "") + ("  🖥" if get(f, "from") == "mac" else ""))
+    elif cmd == "sync":
+        # 🔄 26-10-15 사장님 「클로드 코워크 방을 살려서 사용할 수는 없어? 얘는 폴더 추가가 되잖아」
+        #    Cowork 는 ~/제2의뇌_계획 의 md 만 고침 → 맥(launchd)이 이 명령으로 앱에 올림
+        sys.argv = [sys.argv[0], "plan", "pull"]; main()
+        sys.argv = [sys.argv[0], "plan", "push"]; main()
+        if os.path.exists(LOG_MD):
+            lines = open(LOG_MD, encoding="utf-8").read().splitlines()
+            new, done, sec, moved, 주석 = [], [], "", [], False
+            for ln in lines:
+                if "<!--" in ln:
+                    주석 = True
+                if 주석:
+                    new.append(ln)
+                    if "-->" in ln:
+                        주석 = False
+                    continue
+                if ln.startswith("# "):
+                    sec = ln
+                if sec.startswith("# 새 기록") and re.match(r"\s*-\s*", ln):
+                    m = re.match(r"\s*-\s*(?:(\d{4}-\d{2}-\d{2})\s*)?(💭|📝|💡)\s*(.+)", ln)
+                    if m:
+                        kind = {"💭": "worry", "📝": "log", "💡": "idea"}[m.group(2)]
+                        b.add("brain_notes", {"kind": kind, "text": m.group(3).strip(), "at": now, "solved": False, "from": "cowork"})
+                        moved.append(ln)
+                        continue
+                new.append(ln)
+            if moved:
+                if not any(l.startswith("# 앱에 들어감") for l in new):
+                    new += ["", "# 앱에 들어감"]
+                new += [f"{l.strip()}  ← {time.strftime('%m/%d %H:%M')}" for l in moved]
+                open(LOG_MD, "w", encoding="utf-8").write("\n".join(new) + "\n")
+            print(f"💭 기록 {len(moved)}줄 → 앱")
     elif cmd == "plan":
         url = f"{b.col('brain_plans')}/main"
         r = requests.get(url, headers=b.h, timeout=30)
@@ -193,6 +229,16 @@ def main():
             print(f"앱에서 체크한 {n[0]}개를 md 에 옮김")
         elif a[1] == "push":
             P = plan_parse(text)
+            # ⚠️ md 가 비었으면 앱을 덮지 않습니다 (빈 틀로 앱의 계획이 지워지는 것 막기)
+            if not P["vision"] and not P["plans"]:
+                print("🎯 md 가 비어 있어 앱을 덮지 않음")
+                return
+            # ⚠️ 덮기 전 앱의 옛 판을 brain_plans/bak_<시각> 으로 한 벌 (지우지 않음 · 되돌릴 자리)
+            old_plans = [(p.get("title"), [(x.get("t"), x.get("d")) for x in p.get("steps", [])]) for p in app.get("plans", [])]
+            new_plans = [(p["title"], [(x["t"], x["d"] or x["t"] in app_done) for x in p["steps"]]) for p in P["plans"]]
+            if app.get("plans") and old_plans != new_plans:
+                requests.patch(f"{b.col('brain_plans')}/bak_{time.strftime('%Y%m%d%H%M%S')}", headers=b.h,
+                               json={"fields": {k: val(v) for k, v in app.items()}}, timeout=30)
             for pl in P["plans"]:
                 for st in pl["steps"]:
                     st["d"] = st["d"] or st["t"] in app_done
