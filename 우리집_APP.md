@@ -5,6 +5,20 @@
 
 ---
 
+## 📇 한눈에 — 6칸 (26-10-15 · 모든 앱 같은 꼴 · 문서/00_지도.md)
+
+| 칸 | 내용 |
+|---|---|
+| 무엇 | 🏠 우리집 — 집안일·약·일정·어명 (개인) |
+| 상태 | ✅ |
+| 주소·서버 | https://paranote.netlify.app/home/ · 🌐 공개 저장소 (제2의뇌와 같이) |
+| 구조 | public/home/index.html·core.js · netlify/functions home-api·home-cron · Firestore homes/main |
+| 🔐 비밀·보안 | Firebase 규칙(두 메일) ~/우리집_파이어베이스_규칙.txt · Netlify ~/우리집_Netlify_환경변수.txt — 전체는 `문서/20_보안_점검표.md` |
+| 🔁 복제 | 확인 필요 (아직 없음) |
+| 🔧 문제 기록 | §5 |
+
+---
+
 ## 0. 🔴 건드리기 전
 
 ```

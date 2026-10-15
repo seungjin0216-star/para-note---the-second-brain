@@ -6,6 +6,20 @@
 
 ---
 
+## 📇 한눈에 — 6칸 (26-10-15 · 모든 앱 같은 꼴 · 문서/00_지도.md)
+
+| 칸 | 내용 |
+|---|---|
+| 무엇 | 🧠 제2의뇌 — 스케줄·앱 판·계획·기록 |
+| 상태 | ✅ 본체 /brain/ · 옛 화면 /?old=1 |
+| 주소·서버 | https://paranote.netlify.app → /brain/ · 🌐 공개 저장소 |
+| 구조 | public/brain/index.html · tools/brain.py·todo.py · Firestore users/{uid}/… · 계획 md 는 저장소 밖 ~/제2의뇌_계획 |
+| 🔐 비밀·보안 | Netlify FIREBASE_SERVICE_ACCOUNT·VAPID_*·VITE_FIREBASE_* · Mac 제2의뇌/.env (권한 600) · Firebase 규칙 = 두 메일 — 전체는 `문서/20_보안_점검표.md` |
+| 🔁 복제 | §6 |
+| 🔧 문제 기록 | §5 |
+
+---
+
 ## 🆕 2026-10-14 — 새 화면 /brain/ (지금 본체)
 
 사장님: 「제2의뇌를 정말 안 쓰게 돼. 버려지는 어플이라 마음이 아파. 내 목적의식에 맞게 전체적으로 업그레이드」
