@@ -11,7 +11,7 @@
     python3 tools/brain.py check <id> "바꾼 것"    🔎 확인해 주세요 + 🤖 한 줄  ← 고친 뒤 반드시
     python3 tools/brain.py worry "고민 한 줄"       💭 맥북 대화에서 나온 고민 (from mac)
     python3 tools/brain.py solved <id> "어떻게 넘겼나"   고민 풀림
-    python3 tools/brain.py log "메모 한 줄"          📝
+    python3 tools/brain.py log "메모 한 줄"          📝 (옛 · 쓰지 않음)
     python3 tools/brain.py notes                  기록 보기
     python3 tools/brain.py plan pull              🎯 앱에서 체크한 것을 계획 md 에 옮김   ← md 고치기 전에 반드시
     python3 tools/brain.py plan push              🎯 계획 md → 앱 (체크는 둘 중 하나라도 ✓ 면 ✓)
@@ -21,7 +21,12 @@
 
 ⚠️ 「완료」는 Claude 가 하지 않습니다. 사장님이 앱에서 「완료」를 누릅니다 (check 까지만)
 ⚠️ 지우는 명령은 없습니다 (CLAUDE.md ④) — 앱에서 「빼기」 = off:true
-⚠️ 고민(worry)은 사장님이 대화에서 실제로 말한 것만. 제 추측을 고민으로 적지 않습니다
+🔴 26-10-15 무엇이 어디로 (사장님 「계획은 사업·진로 … 기록은 사업·진로와 관련 없이 개인적인 고민이나, 공부 내용 등 느끼는 내용」)
+   🎯 계획(계획.md)   사업·진로 — 비전 · 계획 · 생각해 볼 것 · 돌아보기(피드백)
+   💭 기록(brain_notes) 개인 — 💭 고민 · 📚 공부 · 🌱 느낀 것   (worry · study · feel)
+   📱 앱 판           앱 문제 · ✅ 할 일·📅 일정은 스케줄
+   ⛔ 앱을 만들며 나눈 대화 · 일하는 방식 결정 · 작업 기록 은 어디에도 넣지 않음 → 작업일지(문서/작업일지/)
+   ⛔ 사장님이 「남겨 줘」 하지 않은 개인 이야기를 Claude 가 알아서 기록하지 않음 (worry 명령은 그때만)
 """
 import os
 import re
@@ -65,7 +70,7 @@ LOG_MD = os.path.expanduser("~/제2의뇌_계획/기록.md")   # Cowork 가 「#
 
 def plan_parse(text):
     """# 비전 / ## 계획 [상태] / 왜: / - [ ] 단계 / # 돌아보기 / - 날짜 · 글"""
-    out = {"vision": "", "plans": [], "reviews": []}
+    out = {"vision": "", "plans": [], "reviews": [], "ideas": []}
     sec, cur = None, None
     # ⚠️ 26-10-15 여러 줄 <!-- … --> 안의 예시 줄을 진짜로 읽어 앱에 「계획 이름」이 들어간 적 있음 → 주석은 통째로 건너뜀
     text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
@@ -89,6 +94,10 @@ def plan_parse(text):
                 cur["steps"].append({"t": m.group(2).strip(), "d": m.group(1).lower() == "x"})
             elif line.strip().startswith("왜:"):
                 cur["why"] = line.strip()[2:].strip()
+        elif sec and "생각해" in sec:
+            m = re.match(r"\s*-\s*(.+)", line)
+            if m:
+                out["ideas"].append(m.group(1).strip())
         elif sec and "돌아보기" in sec:
             m = re.match(r"\s*-\s*(\d{4}-\d{2}-\d{2})\s*[·:-]?\s*(.+)", line)
             if m:
@@ -199,9 +208,9 @@ def main():
                 if ln.startswith("# "):
                     sec = ln
                 if sec.startswith("# 새 기록") and re.match(r"\s*-\s*", ln):
-                    m = re.match(r"\s*-\s*(?:(\d{4}-\d{2}-\d{2})\s*)?(💭|📝|💡)\s*(.+)", ln)
+                    m = re.match(r"\s*-\s*(?:(\d{4}-\d{2}-\d{2})\s*)?(💭|📚|🌱)\s*(.+)", ln)
                     if m:
-                        kind = {"💭": "worry", "📝": "log", "💡": "idea"}[m.group(2)]
+                        kind = {"💭": "worry", "📚": "study", "🌱": "feel"}[m.group(2)]
                         b.add("brain_notes", {"kind": kind, "text": m.group(3).strip(), "at": now, "solved": False, "from": "cowork"})
                         moved.append(ln)
                         continue
@@ -230,7 +239,7 @@ def main():
         elif a[1] == "push":
             P = plan_parse(text)
             # ⚠️ md 가 비었으면 앱을 덮지 않습니다 (빈 틀로 앱의 계획이 지워지는 것 막기)
-            if not P["vision"] and not P["plans"]:
+            if not P["vision"] and not P["plans"] and not P["ideas"]:
                 print("🎯 md 가 비어 있어 앱을 덮지 않음")
                 return
             # ⚠️ 덮기 전 앱의 옛 판을 brain_plans/bak_<시각> 으로 한 벌 (지우지 않음 · 되돌릴 자리)

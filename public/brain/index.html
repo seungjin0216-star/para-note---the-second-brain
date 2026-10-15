@@ -134,7 +134,9 @@ const DAY = '일월화수목금토';
 /* 🔴 사장님: 「쓰고 있는 앱 목록을 이렇게 — 매장통합앱(직원), 매장통합앱(사장), 알바비계산기, 우리집 먼저 · 추후에 다른 어플들 결정」 */
 const APPS = [['staff', '🏪', '매장통합앱(직원)'], ['owner', '👔', '매장통합앱(사장)'], ['alba', '💵', '알바비계산기'], ['home', '🏠', '우리집']];
 const ST = { new: ['새로', 't-new'], doing: ['작업 중', 't-doing'], check: ['확인해 주세요', 't-check'], done: ['완료', 't-done'] };
-const KIND = { worry: '💭 고민', idea: '💡 아이디어', todo: '✅ 할 일', log: '📝 메모' };
+/* 🔴 26-10-15 사장님: 「계획은 향후 사업이나 진로 등의 계획을 피드백하기 위해, 잊지 않기 위해 · 기록은 사업·진로와 관련 없이
+   개인적인 고민이나, 공부 내용 등 느끼는 내용을 기록하기 위해」 → 기록 = 💭 고민 · 📚 공부 · 🌱 느낀 것 (옛 💡·📝 은 보이기만) */
+const KIND = { worry: '💭 고민', study: '📚 공부', feel: '🌱 느낀 것', idea: '💡 (옛) 아이디어', todo: '✅ 할 일', log: '📝 (옛) 메모' };
 /* 알림 — 여러 개 동시에 (사장님 「한 시간 전과 00시 둘 다 알림 갈 수 있게」) · 숫자 = 몇 분 전 · 'd9' = 하루 전 오전 9시 */
 const ALARMS = [[0, '정시'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전'], ['d9', '하루 전 오전 9시']];
 const alarmText = a => typeof a === 'string' && a.includes('T') ? a.slice(5, 16).replace('T', ' ').replace('-', '/') : (ALARMS.find(x => x[0] === a) || [, a])[1];
@@ -256,7 +258,7 @@ function rApps() {
    일반 대화방은 여기에 직접 못 씀 → 대화 끝 「정리해줘」 → 정해진 꼴을 복사해 붙여넣기 · 다음 대화엔 「지금 계획 복사」
    꼴:  # 비전 / # 계획 · ## 이름 [상태] · 왜: · - [ ] 단계 / # 돌아보기 · - 날짜 · 글 / # 기록 · - 💭 고민 · - 📝 결정 · - 💡 아이디어 */
 function 계획읽기(text) {
-  const out = { vision: '', plans: [], reviews: [], notes: [] }; let sec = '', cur = null;
+  const out = { vision: '', plans: [], reviews: [], notes: [], ideas: [] }; let sec = '', cur = null;
   for (const raw of String(text).split(/\r?\n/)) {
     const line = raw.trim(); if (!line || line.startsWith('<!--') || line.startsWith('```')) continue;
     if (/^#\s/.test(line)) { sec = line.replace(/^#\s*/, ''); cur = null; continue; }
@@ -264,13 +266,15 @@ function 계획읽기(text) {
     if (sec.includes('비전')) out.vision = (out.vision + ' ' + line.replace(/^[-*]\s*/, '')).trim();
     else if (sec.includes('계획') && cur) { const m = line.match(/^[-*]\s*\[( |x|X)\]\s*(.+)/); if (m) cur.steps.push({ t: m[2].trim(), d: m[1].toLowerCase() === 'x' }); else if (/^왜\s*:/.test(line)) cur.why = line.replace(/^왜\s*:\s*/, ''); }
     else if (sec.includes('돌아보기')) { const m = line.match(/^[-*]\s*(\d{4}-\d{2}-\d{2})\s*[·:\-]?\s*(.+)/); if (m) out.reviews.push({ date: m[1], text: m[2].trim() }); }
-    else if (sec.includes('기록')) { const m = line.match(/^[-*]\s*(💭|📝|💡)\s*(.+)/); if (m) out.notes.push({ kind: { '💭': 'worry', '📝': 'log', '💡': 'idea' }[m[1]], text: m[2].trim() }); }
+    else if (sec.includes('생각해')) { const m = line.match(/^[-*]\s*(.+)/); if (m) out.ideas.push(m[1].trim()); }
+    else if (sec.includes('기록')) { const m = line.match(/^[-*]\s*(💭|📚|🌱)\s*(.+)/); if (m) out.notes.push({ kind: { '💭': 'worry', '📚': 'study', '🌱': 'feel' }[m[1]], text: m[2].trim() }); }
   }
   return out;
 }
 function 계획글() {
   const P = D.plans.main || {}; let t = `# 비전\n${P.vision || ''}\n\n# 계획\n`;
   (P.plans || []).forEach(pl => { t += `## ${pl.title}${pl.status ? ` [${pl.status}]` : ''}\n${pl.why ? `왜: ${pl.why}\n` : ''}${(pl.steps || []).map(x => `- [${x.d ? 'x' : ' '}] ${x.t}`).join('\n')}\n\n`; });
+  t += `# 생각해 볼 것\n${(P.ideas || []).map(x => `- ${x}`).join('\n')}\n\n`;
   t += `# 돌아보기\n${(P.reviews || []).map(r => `- ${r.date} · ${r.text}`).join('\n')}\n`;
   return t;
 }
@@ -286,20 +290,21 @@ function rPlan_() {
   const P = D.plans.main;
   if (!P || (!P.vision && !(P.plans || []).length)) return `<div class="vision"><small>🎯 비전</small><b>아직 비어 있습니다</b></div>
     <div class="card" style="margin-top:12px"><div class="row"><div class="m"><b>어떻게 채워지나</b><small>① 맥의 Claude <b>Cowork 방</b>에 「제2의뇌_계획」 폴더를 넣고<br>② 첫 마디 「제2의뇌_계획 폴더의 CLAUDE.md 를 읽고 따라줘」<br>③ 비전·계획·고민을 편하게 이야기<br>→ <b>맥이 자동으로 여기 채웁니다</b> (손으로 넣을 것 없음)</small></div></div>
-      <div class="row"><div class="m">계획은 여러 개를 나란히<small>가게 · 앱 사업 · 나·건강·돈 … 앱에서는 단계를 체크만 하시면 Cowork 도 압니다</small></div></div></div>`;
+      <div class="row"><div class="m">🎯 여기는 <b>사업 · 진로</b>만<small>비전 · 계획(여러 개) · 생각해 볼 것 · 돌아보기(피드백). 개인 고민·공부는 💭 기록으로</small></div></div></div>`;
   const plans = P.plans || [];
   return `<div class="vision"><small>🎯 비전 · ${esc(P.updated || '')} Cowork 에서 자동 반영</small><b>${esc(P.vision || '')}</b></div>`
     + plans.map((pl, pi) => { const st = pl.steps || [], dn = st.filter(x => x.d).length, pct = st.length ? Math.round(dn / st.length * 100) : 0;
       return `<div class="acc ${열린.has('pl' + pi) ? 'open' : ''}"><button class="hd" data-act="acc" data-pid="pl${pi}">${esc(pl.title)}<span class="n">${pl.status ? esc(pl.status) + ' · ' : ''}${dn}/${st.length}</span></button>
         <div class="bd"><div style="padding:0 14px 12px">${pl.why ? `<div class="why">왜 · ${esc(pl.why)}</div>` : ''}<div class="bar"><i style="width:${pct}%"></i></div>
         ${st.map((x, si) => `<button class="row" style="padding:10px 0" data-act="planStep" data-pi="${pi}" data-si="${si}"><span class="chk ${x.d ? 'on' : ''}">✓</span><div class="m" style="${x.d ? 'color:var(--muted);text-decoration:line-through' : ''}">${esc(x.t)}</div></button>`).join('')}</div></div></div>`; }).join('')
-    + ((P.reviews || []).length ? `<h2>돌아보기</h2><div class="card">${P.reviews.slice().reverse().map(r => `<div class="row"><div class="m">${esc(r.text)}<small>${esc(r.date)}</small></div></div>`).join('')}</div>` : '');
+    + ((P.ideas || []).length ? `<h2>💡 생각해 볼 것</h2><div class="card">${P.ideas.map(t => `<div class="row"><div class="m">${esc(t)}</div></div>`).join('')}</div>` : '')
+    + ((P.reviews || []).length ? `<h2>🔁 돌아보기 · 피드백</h2><div class="card">${P.reviews.slice().reverse().map(r => `<div class="row"><div class="m">${esc(r.text)}<small>${esc(r.date)}</small></div></div>`).join('')}</div>` : '');
 }
 function rLog() {
   const xs = Object.values(D.notes).filter(x => !x.off && (noteF === 'all' || x.kind === noteF || (noteF === 'open' && x.kind === 'worry' && !x.solved))).sort((a, b) => (b.at || 0) - (a.at || 0));
-  return `<div class="chips" style="margin-top:8px">${[['all', '전체'], ['open', '💭 풀리지 않은 고민'], ['worry', '💭 고민 전체'], ['idea', '💡 아이디어'], ['log', '📝 메모']].map(([k, l]) => `<button data-act="noteF" data-f="${k}" aria-pressed="${k === noteF}">${l}</button>`).join('')}</div>
+  return `<div class="chips" style="margin-top:8px">${[['all', '전체'], ['open', '💭 풀리지 않은 고민'], ['worry', '💭 고민'], ['study', '📚 공부'], ['feel', '🌱 느낀 것']].map(([k, l]) => `<button data-act="noteF" data-f="${k}" aria-pressed="${k === noteF}">${l}</button>`).join('')}</div>
     <h2>${xs.length}개</h2><div class="card">${xs.map(x => `<button class="row ${x.kind === 'worry' ? 'worry' + (x.solved ? ' ok' : '') : ''}" data-act="note" data-id="${x.id}"><div class="m">${esc(x.text)}<small>${KIND[x.kind] || ''} · ${new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.from === 'mac' ? ' · 🖥 맥북 대화' : x.from === 'chat' ? ' · 💬 대화방' : x.from === 'cowork' ? ' · 🤝 Cowork' : ''}${x.kind === 'worry' ? (x.solved ? ' · ✅ 넘김' : ' · 고민 중') : ''}${x.how ? '<br>→ ' + esc(x.how) : ''}</small></div></button>`).join('') || '<div class="empty">아직 없음 — ＋ 로 한 줄</div>'}</div>
-    <div class="note">💭 고민은 그 순간 한 줄이면 됩니다. 나중에 풀리면 「어떻게 넘겼나」를 적어 두세요 — 다음에 비슷한 일이 생기면 여기서 찾습니다.<br>🖥 맥북에서 Claude 와 나눈 고민·결정은 Claude 가 대화 끝에 여기 남깁니다.</div>`;
+    <div class="note">💭 기록은 <b>사업·진로와 상관없는 나</b>의 것 — 개인적인 고민 · 공부한 것 · 느낀 것.<br>고민이 풀리면 「어떻게 넘겼나」를 적어 두세요. 사업·진로 이야기는 🎯 계획으로, 앱 문제는 📱 앱으로.</div>`;
 }
 
 /* ── 시트 ── */
@@ -348,10 +353,10 @@ function noteSheet(x) {
 let QK = 'worry';
 function quickSheet() {
   openSheet(`<h3>✏️ 빠른 기록</h3>
-    <div class="chips">${[['worry', '💭 고민'], ['idea', '💡 아이디어'], ['todo', '✅ 할 일'], ['issue', '📱 앱 문제'], ['event', '📅 일정'], ['log', '📝 메모']].map(([k, l]) => `<button data-act="qk" data-k="${k}" aria-pressed="${QK === k}">${l}</button>`).join('')}</div>
+    <div class="chips">${[['worry', '💭 고민'], ['study', '📚 공부'], ['feel', '🌱 느낀 것'], ['todo', '✅ 할 일'], ['issue', '📱 앱 문제'], ['event', '📅 일정']].map(([k, l]) => `<button data-act="qk" data-k="${k}" aria-pressed="${QK === k}">${l}</button>`).join('')}</div>
     ${QK === 'issue' ? `<div class="chips" style="margin-top:8px">${APPS.map(([k, e, n]) => `<button data-act="iApp" data-k="${k}" aria-pressed="${(appSel || 'staff') === k}">${e} ${n}</button>`).join('')}</div>` : ''}
     ${QK === 'todo' ? `<select class="fld" id="qP">${Object.values(D.items).filter(x => x.type === 'project' && !x.off).map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('')}</select>` : ''}
-    <textarea class="fld" id="qT" placeholder="${QK === 'worry' ? '지금 고민 한 줄 — 가볍든 무겁든' : '한 줄이면 됩니다'} · 🎤 키보드 마이크로 말해도 됩니다"></textarea>
+    <textarea class="fld" id="qT" placeholder="${{ worry: '지금 고민 한 줄 — 가볍든 무겁든', study: '오늘 배운 것 · 읽은 것', feel: '느낀 것 · 깨달은 것' }[QK] || '한 줄이면 됩니다'} · 🎤 키보드 마이크로 말해도 됩니다"></textarea>
     <button class="big" data-act="qSave">넣기</button>`);
   setTimeout(() => $('#qT') && $('#qT').focus(), 80);
 }
@@ -401,7 +406,7 @@ document.addEventListener('click', async e => {
     case 'planPasteSave': { const R = F, P = D.plans.main || {}, 체크 = new Set((P.plans || []).flatMap(p => (p.steps || []).filter(x => x.d).map(x => x.t)));
       R.plans.forEach(p => p.steps.forEach(x => { x.d = x.d || 체크.has(x.t); }));
       const 옛돌 = P.reviews || [], 새돌 = R.reviews.filter(r => !옛돌.some(o => o.date === r.date && o.text === r.text));
-      const v = { updated: today, reviews: [...옛돌, ...새돌] }; if (R.vision) v.vision = R.vision; if (R.plans.length) v.plans = R.plans;
+      const v = { updated: today, reviews: [...옛돌, ...새돌] }; if (R.vision) v.vision = R.vision; if (R.plans.length) v.plans = R.plans; if (R.ideas.length) v.ideas = R.ideas;
       await DB.put('plans', 'main', v); for (const n of R.notes) await DB.add('notes', { ...n, at: Date.now(), solved: false, from: 'chat' });
       closeSheet(); return toast(`🎯 넣었습니다${R.notes.length ? ` · 💭 기록 ${R.notes.length}` : ''}`); }
     case 'planStep': { const P = D.plans.main, pl = JSON.parse(JSON.stringify(P.plans)); const x = pl[+b.dataset.pi].steps[+b.dataset.si]; x.d = !x.d; await DB.put('plans', 'main', { plans: pl, checkedAt: Date.now() }); return; }
@@ -416,7 +421,7 @@ document.addEventListener('click', async e => {
       if (QK === 'issue') await DB.add('issues', { app: appSel || 'staff', text: t, status: 'new', at: Date.now() });
       else if (QK === 'todo') { const p = D.items[$('#qP').value]; await DB.put('items', p.id, { checks: [...(p.checks || []), { id: String(Date.now()), t, d: false }] }); }
       else await DB.add('notes', { kind: QK, text: t, at: Date.now(), solved: false, from: 'phone' });
-      closeSheet(); return toast({ worry: '💭 고민을 남겼습니다', idea: '💡 남겼습니다', todo: '✅ 할 일에 넣었습니다', issue: '📱 앱 판에 넣었습니다', log: '📝 남겼습니다' }[QK]); }
+      closeSheet(); return toast({ worry: '💭 고민을 남겼습니다', study: '📚 공부를 남겼습니다', feel: '🌱 남겼습니다', todo: '✅ 할 일에 넣었습니다', issue: '📱 앱 판에 넣었습니다' }[QK]); }
   }
 });
 
