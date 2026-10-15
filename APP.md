@@ -51,6 +51,9 @@ Claude    tools/brain.py — issues · issue · doing · check(🔎+🤖 한 줄
           Cowork 는 ~/제2의뇌_계획/계획.md · 기록.md 만 고침 (그 폴더 CLAUDE.md)
           맥 launchd com.jangsoo.brain-sync → brain.py sync (파일 바뀔 때 + 15분마다): plan pull → push · 기록.md 「# 새 기록」 → 앱 · 「# 앱에 들어감」 으로 내림
           plist 원본 ~/제2의뇌_계획/.자동동기화.plist · 기록 .동기화기록.txt
+          ✅ 26-10-15 켬 (~/Library/LaunchAgents/com.jangsoo.brain-sync.plist) — 사장님 「토큰 사용량이 유의미하면 다른 방법 … 아니면 그대로 진행」
+             자동 동기화는 Claude 토큰 0 (맥의 python 이 Firestore 에 직접) · 시험: 기록 한 줄 → 몇 초 안에 앱
+             끄기  launchctl unload ~/Library/LaunchAgents/com.jangsoo.brain-sync.plist
 ⚠️ 26-10-15 시험 중 사고: 틀 파일의 여러 줄 주석 안 예시를 진짜로 읽어 앱에 「계획 이름」·기록 3줄이 들어감
    → 기록은 off · 계획 문서 비움 · 파서가 <!-- --> 를 통째로 건너뜀
    → push 는 md 가 비면 앱을 안 덮음 · 덮기 전 앱 판을 brain_plans/bak_<시각> 으로 남김
