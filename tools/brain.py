@@ -37,7 +37,7 @@ import requests
 
 from todo import Firestore, MAIN_UID
 
-APPS = {"staff": "🏪 매장통합앱(직원)", "owner": "👔 매장통합앱(사장)", "alba": "💵 알바비계산기", "home": "🏠 우리집"}
+APPS = {"staff": "🏪 매장통합앱(직원)", "owner": "👔 매장통합앱(사장)", "alba": "💵 알바비계산기", "home": "🏠 우리집", "brain": "🧠 제2의뇌"}
 ST = {"new": "새로", "doing": "작업 중", "check": "확인해 주세요", "done": "완료"}
 
 
