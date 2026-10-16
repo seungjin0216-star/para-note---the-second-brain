@@ -5,6 +5,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="제2의뇌">
 <title>제2의뇌</title>
+<!-- ⚡ 26-10-16 「로딩이 너무 길어」 — 파이어베이스 3개(약 690KB)를 서버 설정 받기와 동시에 미리 받음 (전에는 설정 → 그다음 받기 · 줄 서서) -->
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
+<link rel="modulepreload" href="../home/core.js?v=20261003b">
 <!--
   제2의뇌 — 새 화면 (26-10-14)
   사장님: 「제2의뇌를 정말 안 쓰게 돼. 버려지는 어플이라 마음이 아파. 내 목적의식에 맞게 전체적으로 업그레이드」
@@ -109,10 +114,30 @@ textarea.fld{resize:vertical;min-height:80px;line-height:1.5}
 .toast.show{opacity:1}
 .gate{text-align:center;padding:90px 24px}.gate h1{font-size:28px}
 img.ph{max-width:100%;border-radius:12px;margin-top:8px}
+/* 🧠 로딩 (26-10-16 사장님 「재밌는 거 좀 띄워줘 · 추천으로」) — 뇌가 통통 · 한마디가 바뀜 · 아래 점 셋 = 지금 어느 단계 */
+.boot{text-align:center;padding:80px 20px 40px}
+.boot .br{font-size:64px;display:inline-block;position:relative;animation:bob 1.1s ease-in-out infinite}
+.boot .br::after{content:"⚡";position:absolute;font-size:22px;right:-14px;top:-4px;animation:zap 1.1s steps(2) infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(4deg)}}
+@keyframes zap{0%{opacity:0}50%{opacity:1}}
+.boot p{margin:18px 0 6px;font-weight:700;font-size:16px;min-height:22px;transition:opacity .25s}
+.boot small{color:var(--muted);font-size:12px}
+.boot .st{display:flex;justify-content:center;gap:14px;margin-top:18px;font-size:12px;color:var(--muted)}
+.boot .st i{font-style:normal;opacity:.35}.boot .st i.on{opacity:1;color:var(--accent);font-weight:700}
+@media (prefers-reduced-motion:reduce){.boot .br,.boot .br::after{animation:none}}
 </style></head>
 <body>
 <header><div><h1>제2의뇌</h1><small id="sub"></small></div><small id="who"></small></header>
-<main id="app"><div class="empty">불러오는 중…</div></main>
+<main id="app"><div class="boot"><span class="br">🧠</span><p id="bootMsg">뉴런 깨우는 중…</p><small id="bootTip"></small>
+  <div class="st"><i id="st1" class="on">① 연결</i><i id="st2">② 로그인</i><i id="st3">③ 기억 꺼내기</i></div></div></main>
+<script>
+/* 🧠 로딩 한마디 — 모듈보다 먼저 돌아서 화면이 바로 움직임 */
+(function(){ var M=['뉴런 깨우는 중…','기억 서랍 여는 중…','어제 적은 고민 찾는 중…','곱창 굽듯 노릇하게 불러오는 중…','잊어버린 할 일 줍는 중…','머릿속 포스트잇 떼는 중…','시냅스 연결 중… 찌릿','생각 정리 중… 조금만요'],
+  T=['💡 적어 두면 잊어도 괜찮아요','💡 앱 문제는 📱 앱 탭에 한 줄','💡 계획은 🎯, 개인 생각은 💭','💡 ＋ 로 바로 적기'], i=0;
+  var t=document.getElementById('bootTip'); if(t) t.textContent=T[Math.floor(Math.random()*T.length)];
+  window.__bootT=setInterval(function(){ var e=document.getElementById('bootMsg'); if(!e) return clearInterval(window.__bootT); i=(i+1)%M.length; e.style.opacity=0; setTimeout(function(){ e.textContent=M[i]; e.style.opacity=1; },250); },1600);
+})();
+</script>
 <button class="fab" id="fab" hidden aria-label="빠른 기록">＋</button>
 <nav id="nav" hidden>
   <button data-s="today" aria-pressed="true"><b>📅</b>스케줄</button>
@@ -163,14 +188,23 @@ function demo() {
 }
 const MAP = { issues: 'brain_issues', events: 'brain_events', notes: 'brain_notes', items: 'items', plans: 'brain_plans', topics: 'brain_topics' };
 async function live() {
-  const cfg = await (await fetch(API + '?a=config')).json();
+  /* ⚡ 26-10-16 느린 원인 ① 서버 설정(config)을 매번 Netlify 함수에 물음 — 0.7~3초 (잠든 함수를 깨우면 더)
+     → 한 번 받으면 폰에 두고 바로 씀 · 뒤에서 새로 받아 바뀌었으면 다음에 반영 (값은 원래 화면에 공개되는 파이어베이스 설정) */
+  const 단계 = n => { [1, 2, 3].forEach(k => { const e = document.getElementById('st' + k); if (e) e.classList.toggle('on', k <= n); }); };
+  let cfg = null; try { cfg = JSON.parse(localStorage.getItem('brain-cfg') || 'null'); } catch (e) {}
+  const 새설정 = fetch(API + '?a=config').then(r => r.json()).then(c => { if (c.apiKey) try { localStorage.setItem('brain-cfg', JSON.stringify(c)); } catch (e) {} return c; });
+  if (!cfg || !cfg.apiKey) cfg = await 새설정; else 새설정.catch(() => {});
   if (!cfg.apiKey) throw new Error('서버 설정을 못 받았습니다');
+  단계(2);
   const FV = '10.12.2', G = m => `https://www.gstatic.com/firebasejs/${FV}/firebase-${m}.js`;
   const [{ initializeApp }, A, F] = await Promise.all([import(G('app')), import(G('auth')), import(G('firestore'))]);
   const app = initializeApp(cfg);   // ⚠️ 이름 없이 = 옛 제2의뇌와 같은 로그인 (다시 로그인 안 해도 됨)
-  const auth = A.getAuth(app), db = F.getFirestore(app);
+  /* ⚡ 느린 원인 ② 열 때마다 기록 7묶음을 서버에서 처음부터 받음 → 폰에 저장해 두고 그걸 먼저 보여 줌 (서버 것이 오면 바로 바뀜) */
+  let db; try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); } catch (e) { db = F.getFirestore(app); }
+  const auth = A.getAuth(app);
   A.onAuthStateChanged(auth, u => {
     if (!u) return gate(A, auth);
+    단계(3);
     UID = u.uid; $('#who').textContent = u.displayName || '';
     const col = n => F.collection(db, 'users', UID, MAP[n]);
     Object.keys(MAP).forEach(n => F.onSnapshot(col(n), s => { const o = {}; s.forEach(d => o[d.id] = { id: d.id, ...d.data() }); D[n] = o; render(); }, e => toast('⚠️ ' + e.code)));
@@ -196,6 +230,7 @@ const 할일들 = () => Object.values(D.items).filter(x => x.type === 'project' 
 /* ── 그리기 ── */
 function render() {
   if (!DB) return;
+  if (window.__bootT) { clearInterval(window.__bootT); window.__bootT = null; }
   today = C.kst().date;
   $('#sub').textContent = `${+today.slice(5, 7)}월 ${+today.slice(8)}일 ${DAY[C.wdOf(today)]}요일`;
   $('#nav').hidden = false; $('#fab').hidden = false;
