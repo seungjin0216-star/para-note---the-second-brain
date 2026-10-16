@@ -132,7 +132,7 @@ const API = '/.netlify/functions/home-api';
 const DAY = '일월화수목금토';
 
 /* 🔴 사장님: 「쓰고 있는 앱 목록을 이렇게 — 매장통합앱(직원), 매장통합앱(사장), 알바비계산기, 우리집 먼저 · 추후에 다른 어플들 결정」 */
-const APPS = [['staff', '🏪', '매장통합앱(직원)'], ['owner', '👔', '매장통합앱(사장)'], ['alba', '💵', '알바비계산기'], ['home', '🏠', '우리집']];
+const APPS = [['staff', '🏪', '매장통합앱(직원)'], ['owner', '👔', '매장통합앱(사장)'], ['alba', '💵', '알바비계산기'], ['home', '🏠', '우리집'], ['brain', '🧠', '제2의뇌']];   // 26-10-16 제2의뇌 더함
 const ST = { new: ['새로', 't-new'], doing: ['작업 중', 't-doing'], check: ['확인해 주세요', 't-check'], done: ['완료', 't-done'] };
 /* 🔴 26-10-15 사장님: 「계획은 향후 사업이나 진로 등의 계획을 피드백하기 위해, 잊지 않기 위해 · 기록은 사업·진로와 관련 없이
    개인적인 고민이나, 공부 내용 등 느끼는 내용을 기록하기 위해」 → 기록 = 💭 고민 · 📚 공부 · 🌱 느낀 것 (옛 💡·📝 은 보이기만) */
@@ -213,7 +213,11 @@ function 달력() {
     const es = 그날(s), my = es.filter(e => !e._home).length, hm = es.filter(e => e._home).length;
     h += `<button class="${s.slice(0, 7) !== month ? 'o' : ''} ${s === today ? 't' : ''} ${s === sel ? 'sel' : ''}" data-act="day" data-d="${s}">${+s.slice(8)}${es.length ? `<i>${'<b></b>'.repeat(Math.min(my, 3))}${'<b class="hm"></b>'.repeat(Math.min(hm, 2))}</i>` : ''}</button>`;
   }
-  return `<div class="card"><div class="calh"><button data-act="mon" data-d="-1">‹</button><b>${y}년 ${m}월</b><button data-act="mon" data-d="1">›</button></div><div class="cal">${h}</div></div>`;
+  /* 📅 26-10-16 사장님 「먼 미래 일정을 추가했더니 보고 있는 달력이 먼 미래로 가 버림 … 날짜 클릭 시 아이폰 다이얼」
+     → 제목을 누르면 아이폰 날짜 다이얼 · 오늘이 아닐 때 「오늘」 버튼 · 일정을 저장해도 보던 달은 그대로 */
+  return `<div class="card"><div class="calh"><button data-act="mon" data-d="-1">‹</button>
+    <label style="position:relative;font-weight:800;padding:4px 10px;border-radius:10px;background:var(--soft)">${y}년 ${m}월 ▾<input type="date" id="calPick" value="${sel}" style="position:absolute;inset:0;opacity:0;width:100%"></label>
+    ${month !== today.slice(0, 7) || sel !== today ? '<button data-act="goToday" style="width:auto;padding:0 10px;font-weight:700;color:var(--accent)">오늘</button>' : ''}<button data-act="mon" data-d="1">›</button></div><div class="cal">${h}</div></div>`;
 }
 const 일정줄 = (e, s) => `<button class="row ev ${e._home ? 'hm' : ''}" data-act="${e._home ? 'homeEv' : 'editEv'}" data-id="${e.id}"><div class="m">${e._home ? '🏠 ' : ''}${esc(e.title)}<small>${e.time || '종일'}${e._home ? ' · 우리집' : ''}${e.repeat && e.repeat.type && e.repeat.type !== 'none' ? ' · 반복' : ''}</small></div>${(e.alarms || []).length ? `<span class="bell">🔔 ${e.alarms.map(alarmText).join(' · ')}</span>` : ''}</button>`;
 /* 📅 스케줄 = 오늘 + 할 일 (26-10-15 사장님 「할 일 탭을 오늘과 통합시켜서 스케줄로」 · 「개인에 관련된 할 일」 · 「다 펼치지 않고」) */
@@ -250,6 +254,7 @@ function rApps() {
     const 점 = 이슈().some(x => x.app === k && x.status !== 'done');
     h += `<button class="app" data-act="app" data-a="${k}" aria-pressed="${k === appSel}"><img src="icons/${k}.png" alt=""><span>${esc(n.replace(/\(.*\)/, ''))}${/\(/.test(n) ? `<small style="display:block;color:var(--muted);font-weight:600;font-size:13px">${esc(n.match(/\((.*)\)/)[1])}</small>` : ''}</span>${점 ? '<span class="dt"></span>' : ''}</button>`;
     if (idx % 2 === 1 && APPS.slice(idx - 1, idx + 1).some(a => a[0] === appSel)) h += 앱판(appSel);
+    if (idx === APPS.length - 1 && idx % 2 === 0 && k === appSel) h += 앱판(appSel);   // 홀수 개일 때 마지막 한 장
   });
   return `<h2>쓰고 있는 앱</h2><div class="apps">${h}</div>
     <p class="note">카드를 누르면 그 앱의 문제가 아래로 펼쳐집니다. ✓ 확인 끝 · ↩ 다시 문제 발생</p>`;
@@ -261,6 +266,30 @@ function 주제목록(kind) {
   const xs = Object.values(D.topics || {}).filter(t => !t.off && (t.kind || '계획') === kind).sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
   if (!xs.length) return '';
   return `<h2>🗂 대화방 정리 · ${xs.length}</h2><div class="card">${xs.map(t => `<button class="row" data-act="topic" data-id="${t.id}"><div class="m"><b>${esc(t.title)}</b><small>${esc(t.summary || '')}${t.summary ? ' · ' : ''}${esc(String(t.updated || '').slice(5))}</small></div><span style="color:var(--muted);font-size:20px">›</span></button>`).join('')}</div>`;
+}
+/* 📖 26-10-16 사장님 「대화에서 나온 내용들이 그냥 나열되어 있는데 정리해서 보여지게끔 … 한 달 정도 쌓이면 보지도 못할 것 같아」
+   → 칸마다 카드: 한 줄 요약(크게) · 지금까지 정리 · ✅ 정한 것 · ❓ 아직 고민 중 은 펼쳐 두고
+     📚 그 밖의 칸(개념·용어 등) · 🗓 날짜별 은 접어 둠 (눌러야 펼침) */
+function 주제보기(md) {
+  const 칸 = {}, 순서 = []; let 지금 = '_';
+  String(md || '').replace(/<!--[\s\S]*?-->/g, '').split('\n').forEach(l => {
+    const m = l.match(/^##\s+(.+)/); if (m) { 지금 = m[1].trim(); 순서.push(지금); 칸[지금] = []; return; }
+    if (/^#\s|^분류\s*[:：]|^처음\s*:/.test(l)) return;
+    (칸[지금] = 칸[지금] || []).push(l);
+  });
+  const 글 = n => (칸[n] || []).join('\n').trim();
+  const 찾기 = re => 순서.find(n => re.test(n));
+  const 요약 = 찾기(/한 줄 요약/), 정리 = 찾기(/지금까지/), 정한 = 찾기(/정한/), 고민 = 찾기(/고민|다음에/), 날짜 = 찾기(/날짜/);
+  const 카드 = (제목, 몸, 색) => 몸 ? `<div style="background:${색 || 'var(--soft)'};border-radius:14px;padding:12px 14px;margin-top:10px"><div style="font-weight:800;font-size:14px;margin-bottom:6px">${제목}</div>${md글(몸)}</div>` : '';
+  const 접기 = (제목, 몸) => 몸 ? `<details style="margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px"><summary style="font-weight:700;cursor:pointer">${제목}</summary>${md글(몸)}</details>` : '';
+  const 날수 = (글(날짜).match(/^###/gm) || []).length;
+  const 나머지 = 순서.filter(n => ![요약, 정리, 정한, 고민, 날짜].includes(n));
+  return (요약 ? `<div style="font-size:17px;font-weight:700;line-height:1.5;margin:4px 0 2px">${esc(글(요약))}</div>` : '')
+    + 카드('🧭 지금까지 정리', 글(정리))
+    + 카드('✅ 정한 것', 글(정한), 'color-mix(in srgb,var(--done) 12%,var(--surface))')
+    + 카드('❓ 아직 고민 중 · 다음에 이야기할 것', 글(고민), 'color-mix(in srgb,var(--warm) 12%,var(--surface))')
+    + 나머지.map(n => 접기('📚 ' + esc(n), 글(n))).join('')
+    + 접기(`🗓 날짜별로 이야기한 것${날수 ? ` · ${날수}일` : ''}`, 글(날짜));
 }
 function md글(md) {
   const 줄 = String(md || '').replace(/<!--[\s\S]*?-->/g, '').split('\n');
@@ -311,7 +340,7 @@ let 예비 = false;
 function rPlan() {
   const 예비칸 = `<button class="mini" data-act="planSpare" style="display:block;margin:14px auto 0">${예비 ? '접기' : '맥 없이 넣기 (예비)'}</button>`
     + (예비 ? `<div class="two" style="margin-top:6px"><button class="big sec" style="margin:0;font-size:14px;padding:11px" data-act="planCopy">📋 지금 계획 복사</button><button class="big sec" style="margin:0;font-size:14px;padding:11px" data-act="planPaste">📥 정리 붙여넣기</button></div>` : '');
-  return 주제목록('계획') + rPlan_() + 예비칸;
+  return 주제목록('계획') + rPlan_() + 폰메모('plan_memo') + 예비칸;
 }
 function rPlan_() {
   const P = D.plans.main;
@@ -327,11 +356,16 @@ function rPlan_() {
     + ((P.ideas || []).length ? `<h2>💡 생각해 볼 것</h2><div class="card">${P.ideas.map(t => `<div class="row"><div class="m">${esc(t)}</div></div>`).join('')}</div>` : '')
     + ((P.reviews || []).length ? `<h2>🔁 돌아보기 · 피드백</h2><div class="card">${P.reviews.slice().reverse().map(r => `<div class="row"><div class="m">${esc(r.text)}<small>${esc(r.date)}</small></div></div>`).join('')}</div>` : '');
 }
+/* 💭 기록 (26-10-16) — 사장님: 「고민을 이제 핸드폰으로 하지 않고 거의 99% 이상 맥북 클로드로 … 풀리지 않는 고민, 고민 등등 삭제해 주고,
+   각 대화방에서 이름을 정해서 그렇게 쌓이는 걸로」 → 대화방 정리(분류 기록)가 본체 · 폰 메모만 아래에 · 옛 고민 줄은 숨김(데이터는 그대로) */
+function 폰메모(kind) {
+  const xs = Object.values(D.notes).filter(x => !x.off && x.kind === kind).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 10);
+  return xs.length ? `<h2>📱 폰에서 적은 메모</h2><div class="card">${xs.map(x => `<div class="row"><div class="m">${esc(x.text)}<small>${new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.merged ? ' · 맥 계획 방에 넘김' : ''}</small></div></div>`).join('')}</div>` : '';
+}
 function rLog() {
-  const xs = Object.values(D.notes).filter(x => !x.off && (noteF === 'all' || x.kind === noteF || (noteF === 'open' && x.kind === 'worry' && !x.solved))).sort((a, b) => (b.at || 0) - (a.at || 0));
-  return 주제목록('기록') + `<div class="chips" style="margin-top:8px">${[['all', '전체'], ['open', '💭 풀리지 않은 고민'], ['worry', '💭 고민'], ['study', '📚 공부'], ['feel', '🌱 느낀 것']].map(([k, l]) => `<button data-act="noteF" data-f="${k}" aria-pressed="${k === noteF}">${l}</button>`).join('')}</div>
-    <h2>${xs.length}개</h2><div class="card">${xs.map(x => `<button class="row ${x.kind === 'worry' ? 'worry' + (x.solved ? ' ok' : '') : ''}" data-act="note" data-id="${x.id}"><div class="m">${esc(x.text)}<small>${KIND[x.kind] || ''} · ${new Date(x.at || 0).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}${x.from === 'mac' ? ' · 🖥 맥북 대화' : x.from === 'chat' ? ' · 💬 대화방' : x.from === 'cowork' ? ' · 🤝 Cowork' : ''}${x.kind === 'worry' ? (x.solved ? ' · ✅ 넘김' : ' · 고민 중') : ''}${x.how ? '<br>→ ' + esc(x.how) : ''}</small></div></button>`).join('') || '<div class="empty">아직 없음 — ＋ 로 한 줄</div>'}</div>
-    <div class="note">💭 기록은 <b>사업·진로와 상관없는 나</b>의 것 — 개인적인 고민 · 공부한 것 · 느낀 것.<br>고민이 풀리면 「어떻게 넘겼나」를 적어 두세요. 사업·진로 이야기는 🎯 계획으로, 앱 문제는 📱 앱으로.</div>`;
+  return (주제목록('기록') || '<div class="card" style="margin-top:8px"><div class="empty">아직 없음 — 맥의 Claude 대화방에서 「이 방 제목은 ○○」 하고 이야기하면 여기 쌓입니다</div></div>')
+    + 폰메모('memo')
+    + `<div class="note">💭 사업·진로와 상관없는 <b>나</b>의 것 — 고민 · 공부 · 느낀 것. 대화방마다 하나씩 쌓입니다. ＋ 는 폰 메모</div>`;
 }
 
 /* ── 시트 ── */
@@ -378,6 +412,13 @@ function noteSheet(x) {
     <button class="big sec" data-act="offNote">빼기 (지우지 않음)</button>`);
 }
 let QK = 'worry';
+function 메모창(k) {
+  openSheet(`<h3>${k === 'plan' ? '🎯 사업 · 진로 메모' : '💭 나 — 메모'}</h3>
+    <p class="note" style="margin-top:0">${k === 'plan' ? '떠오른 사업·진로 생각 한 줄 → 맥의 계획 파일 「생각해 볼 것」에 들어가, 다음 대화 때 Claude 가 봅니다' : '고민·공부·느낀 것 한 줄 → 다음 대화 때 Claude 가 봅니다'}</p>
+    <textarea class="fld" id="mT" rows="4" placeholder="한 줄이면 됩니다 · 🎤 키보드 마이크로 말해도 됩니다"></textarea>
+    <button class="big" data-act="memoSave" data-k="${k}">넣기</button>`);
+  setTimeout(() => $('#mT') && $('#mT').focus(), 80);
+}
 function quickSheet() {
   openSheet(`<h3>✏️ 빠른 기록</h3>
     <div class="chips">${[['worry', '💭 고민'], ['study', '📚 공부'], ['feel', '🌱 느낀 것'], ['todo', '✅ 할 일'], ['issue', '📱 앱 문제'], ['event', '📅 일정']].map(([k, l]) => `<button data-act="qk" data-k="${k}" aria-pressed="${QK === k}">${l}</button>`).join('')}</div>
@@ -388,17 +429,27 @@ function quickSheet() {
   setTimeout(() => $('#qT') && $('#qT').focus(), 80);
 }
 function 사진줄이기(file) { return new Promise((ok, no) => { const img = new Image(), u = URL.createObjectURL(file); img.onload = () => { const k = Math.min(1, 900 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', 0.7)); }; img.onerror = no; img.src = u; }); }
-document.addEventListener('change', async e => { if (e.target.id === 'iP' && e.target.files[0]) { F.text = $('#iT').value; F.photo = await 사진줄이기(e.target.files[0]); issueSheet(null, true); } });
+document.addEventListener('change', async e => { if (e.target.id === 'calPick' && e.target.value) { sel = e.target.value; month = sel.slice(0, 7); return render(); } if (e.target.id === 'iP' && e.target.files[0]) { F.text = $('#iT').value; F.photo = await 사진줄이기(e.target.files[0]); issueSheet(null, true); } });
 
 /* ── 누르기 ── */
 document.addEventListener('click', async e => {
   const nb = e.target.closest('#nav button'); if (nb) { cur = nb.dataset.s; document.querySelectorAll('#nav button').forEach(x => x.setAttribute('aria-pressed', x === nb)); render(); scrollTo(0, 0); return; }
-  if (e.target.closest('#fab')) { QK = 'worry'; return quickSheet(); }
+  /* ＋ 는 지금 탭에 맞게 (26-10-16 사장님 「계획 탭에서 + 를 누르면 바로 사업·진로든 계획이든 적을 수 있게 … 기록도 마찬가지」) */
+  if (e.target.closest('#fab')) {
+    if (cur === 'apps') return issueSheet(null);
+    if (cur === 'plan' || cur === 'log') return 메모창(cur);
+    return openSheet(`<h3>＋ 넣기</h3><div class="two"><button class="big" style="margin:0" data-act="newEv" data-d="${sel}">📅 일정</button><button class="big sec" style="margin:0" data-act="fabTodo">✅ 할 일</button></div>`);
+  }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const k = b.dataset.act, id = b.dataset.id;
   switch (k) {
     case 'go': cur = b.dataset.s; document.querySelectorAll('#nav button').forEach(x => x.setAttribute('aria-pressed', x.dataset.s === cur)); return render();
     case 'day': sel = b.dataset.d; if (sel.slice(0, 7) !== month) month = sel.slice(0, 7); return render();
+    case 'memoSave': { const t = $('#mT').value.trim(); if (!t) return toast('한 줄 적어 주세요');
+      await DB.add('notes', { kind: b.dataset.k === 'plan' ? 'plan_memo' : 'memo', text: t, at: Date.now(), from: 'phone', merged: false });
+      closeSheet(); return toast('넣었습니다 — 맥이 계획 방에 넘깁니다'); }
+    case 'fabTodo': { closeSheet(); QK = 'todo'; return quickSheet(); }
+    case 'goToday': sel = today; month = today.slice(0, 7); return render();
     case 'mon': { const [y, m] = month.split('-').map(Number), d = new Date(Date.UTC(y, m - 1 + +b.dataset.d, 1)); month = d.toISOString().slice(0, 7); return render(); }
     case 'newEv': return evSheet(null);
     case 'editEv': return evSheet(D.events[id]);
@@ -408,7 +459,7 @@ document.addEventListener('click', async e => {
     case 'almX': { 읽기(); F.alarms = F.alarms.filter(x => x !== b.dataset.k); return drawEv(); }
     case 'rep': { 읽기(); const t = b.dataset.k; F.repeat = t === 'daily' ? { type: 'everyN', n: 1 } : t === 'weekly' ? { type: 'weekly', days: [C.wdOf(F.date)] } : { type: t }; return drawEv(); }
     case 'saveEv': { 읽기(); if (!F.title.trim()) return toast('무엇인지 적어 주세요'); const v = { title: F.title.trim(), date: F.date, time: F.time || '', alarms: F.alarms || [], repeat: F.repeat || { type: 'none' } };
-      if (F.id) await DB.put('events', F.id, v); else await DB.add('events', v); closeSheet(); sel = F.date; month = F.date.slice(0, 7); return toast('📅 저장했습니다' + (v.alarms.length ? ' · 🔔 ' + v.alarms.map(alarmText).join(', ') : '')); }
+      if (F.id) await DB.put('events', F.id, v); else await DB.add('events', v); closeSheet(); return toast('📅 저장했습니다' + (v.alarms.length ? ' · 🔔 ' + v.alarms.map(alarmText).join(', ') : '')); }
     case 'offEv': await DB.put('events', F.id, { off: true }); closeSheet(); return toast('뺐습니다');
     case 'chk': { const p = D.items[b.dataset.pid]; const checks = (p.checks || []).map(c => c.id === b.dataset.cid ? { ...c, d: true } : c); await DB.put('items', p.id, { checks }); return toast('✅ 완료 — 할 일 탭에서 안 보입니다'); }
     case 'addTodo': { const t = prompt('할 일 한 줄'); if (!t) return; const p = D.items[b.dataset.pid]; await DB.put('items', p.id, { checks: [...(p.checks || []), { id: String(Date.now()), t, d: false }] }); return toast('넣었습니다'); }
@@ -425,7 +476,7 @@ document.addEventListener('click', async e => {
     case 'reopen': await DB.put('issues', id, { status: 'new', reopenAt: Date.now() }); return toast('🔴 다시 문제 발생으로');
     case 'doneToggle': 완료보기 = !완료보기; return render();
     case 'acc': { const k2 = b.dataset.pid, box = b.closest('.acc'); box.classList.toggle('open'); box.classList.contains('open') ? 열린.add(k2) : 열린.delete(k2); try { localStorage.setItem('brain-open', JSON.stringify([...열린])); } catch (_) {} return; }
-    case 'topic': { const t = D.topics[id]; return openSheet(`<h3>${esc(t.title)}</h3><p class="note" style="margin:0 0 6px">${t.kind === '기록' ? '💭 기록' : '🎯 계획'} · 마지막 정리 ${esc(t.updated || '')}</p>${md글(t.md)}<button class="big sec" data-act="x" onclick="document.getElementById('ov').classList.remove('show')">닫기</button>`); }
+    case 'topic': { const t = D.topics[id]; return openSheet(`<h3>${esc(t.title)}</h3><p class="note" style="margin:0 0 6px">${t.kind === '기록' ? '💭 기록' : '🎯 계획'} · 마지막 정리 ${esc(t.updated || '')}</p>${주제보기(t.md)}<button class="big sec" data-act="x" onclick="document.getElementById('ov').classList.remove('show')">닫기</button>`); }
     case 'planSpare': 예비 = !예비; return render();
     case 'planCopy': { const t = 계획글(); try { await navigator.clipboard.writeText(t); toast('📋 복사했습니다 — 대화방에 붙여넣고 이어서 말씀하세요'); } catch (_) { openSheet(`<h3>📋 지금 계획</h3><textarea class="fld" rows="14">${esc(t)}</textarea><p class="note">길게 눌러 전체 선택 → 복사</p>`); } return; }
     case 'planPaste': return openSheet(`<h3>📥 대화 정리 붙여넣기</h3><p class="note" style="margin-top:0">대화방 끝에 「정리해줘」 하면 나오는 글을 통째로 붙여넣으세요. 계획은 새 글로 바뀌고(체크는 유지), 돌아보기·기록은 더해집니다.</p><textarea class="fld" id="pp" rows="12" placeholder="# 비전 …"></textarea><button class="big" data-act="planPasteGo">미리 보기</button>`);
@@ -453,6 +504,7 @@ document.addEventListener('click', async e => {
   }
 });
 
+if (DEMO) { window.__D = D; window.__render = render; }   // 미리보기(내 맥)에서만 — 시험용
 if (DEMO) demo(); else live().catch(e => { $('#app').innerHTML = `<div class="empty">못 열었습니다<br><small>${esc(e.message)}</small></div>`; });
 </script>
 </body></html>

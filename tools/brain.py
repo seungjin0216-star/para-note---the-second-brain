@@ -239,6 +239,27 @@ def main():
                 new += [f"{l.strip()}  ← {time.strftime('%m/%d %H:%M')}" for l in moved]
                 open(LOG_MD, "w", encoding="utf-8").write("\n".join(new) + "\n")
             print(f"💭 기록 {len(moved)}줄 → 앱")
+        # 📱 폰 메모 → 맥 파일 (26-10-16) — plan_memo 는 계획.md 「# 생각해 볼 것」 · memo 는 폰메모.md · 넘긴 것은 merged:true
+        phone = [d for d in b.list("brain_notes") if get(d["fields"], "kind") in ("plan_memo", "memo") and get(d["fields"], "merged") is not True and get(d["fields"], "off") is not True]
+        for d in sorted(phone, key=lambda d: int(get(d["fields"], "at", 0) or 0)):
+            f, did = d["fields"], d["name"].split("/")[-1]
+            when = time.strftime("%Y-%m-%d", time.localtime(int(get(f, "at", 0) or 0) / 1000))
+            line = f"- 📱 {get(f, 'text')}  ({when})"
+            if get(f, "kind") == "plan_memo":
+                t = open(PLAN_MD, encoding="utf-8").read()
+                if "# 생각해 볼 것" not in t:
+                    t = t.replace("# 돌아보기", "# 생각해 볼 것\n\n# 돌아보기", 1) if "# 돌아보기" in t else t + "\n# 생각해 볼 것\n"
+                i = t.index("# 생각해 볼 것") + len("# 생각해 볼 것")
+                t = t[:i] + "\n" + line + t[i:]
+                open(PLAN_MD, "w", encoding="utf-8").write(t)
+            else:
+                pm = os.path.expanduser("~/제2의뇌_계획/폰메모.md")
+                old = open(pm, encoding="utf-8").read() if os.path.exists(pm) else "# 폰 메모 (개인) — 폰 ＋ 로 적은 것. 맥이 넣어 둠\n"
+                open(pm, "w", encoding="utf-8").write(old.rstrip("\n") + "\n" + line + "\n")
+            b.patch("brain_notes", did, {"merged": True})
+        if phone:
+            print(f"📱 폰 메모 {len(phone)}줄 → 맥 파일")
+            sys.argv = [sys.argv[0], "plan", "push"]; main()
         # 🗂 대화정리/*.md → brain_topics (파일 이름이 곧 id · 파일이 없어지면 off — 지우지 않음)
         if os.path.isdir(TOPIC_DIR):
             import hashlib
