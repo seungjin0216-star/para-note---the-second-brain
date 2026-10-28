@@ -417,7 +417,7 @@ function drawEv() {
   openSheet(`<h3>📅 ${F.id ? '일정 고치기' : '일정 넣기'}</h3>
     <input class="fld" id="evT" value="${esc(F.title)}" placeholder="무엇을 (예: 세무사 서류 보내기)">
     <div class="two"><input class="fld" id="evD" type="date" value="${F.date}"><input class="fld" id="evH" type="time" value="${F.time || ''}"></div>
-    <div class="lbl">🔔 알림 — 여러 개 골라도 됩니다 ${F.time ? '' : '(시간이 없으면 「하루 전 오전 9시」·직접만 울립니다)'}</div>
+    <div class="lbl">🔔 알림 — 여러 개 골라도 됩니다 ${F.time ? '' : '(시간이 없으면 <b>오전 9시 기준</b> — 정각 = 9시 · 1시간 전 = 8시)'}</div>
     <div class="chips">${ALARMS.map(([k, l]) => `<button data-act="alm" data-k="${k}" aria-pressed="${(F.alarms || []).includes(k)}">${l}</button>`).join('')}</div>
     <div class="two" style="align-items:center"><input class="fld" id="evC" type="datetime-local"><button class="big sec" data-act="almC" style="flex:none;width:auto;padding:12px 14px;margin-top:8px">＋ 직접</button></div>
     ${customs.length ? `<div class="chips" style="margin-top:8px">${customs.map(c => `<button aria-pressed="true" data-act="almX" data-k="${c}">🔔 ${alarmText(c)} ✕</button>`).join('')}</div>` : ''}

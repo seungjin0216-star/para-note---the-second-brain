@@ -74,9 +74,10 @@ export default async () => {
     const 글 = a => typeof a === 'number' ? (a === 0 ? '지금' : a >= 60 ? `${a / 60}시간 뒤` : `${a}분 뒤`) : a === 'd9' ? '내일' : '알림';
     for (const d of [today, 내일]) for (const e of eventsOn(bev, d)) for (const a of (e.alarms || [])) {
       let ok = false;
-      if (typeof a === 'number' && e.time && d === today) ok = 울릴때(d, hm2min(e.time) - a);
+      // 26-10-28 종일 일정(시간 없음)의 「몇 분 전」은 오전 9시 기준 — 전에는 시간이 없으면 조용히 건너뜀 (사장님 「제2의뇌 알림 기능 안 되는 것 같은데」 · 「건축과 벌금내기」 종일 + 30·10·0·60분)
+      if (typeof a === 'number' && d === today) ok = 울릴때(d, (e.time ? hm2min(e.time) : 9 * 60) - a);
       else if (a === 'd9' && d === 내일) ok = 울릴때(today, 9 * 60);
-      if (ok) jobs.push(once(`brain_${e.id}_${d}_${a}`, () => push(db, ['me'], `📅 ${글(a)} · ${e.title}`, `${d === today ? '오늘' : '내일'} ${e.time || '종일'}`, `brain-${e.id}`, '/brain/')));
+      if (ok) jobs.push(once(`brain_${e.id}_${d}_${a}`, () => push(db, ['me'], `📅 ${typeof a === 'number' && !e.time ? '오늘' : 글(a)} · ${e.title}`, `${d === today ? '오늘' : '내일'} ${e.time || '종일'}`, `brain-${e.id}`, '/brain/')));
     }
     for (const e of bev) for (const a of (e.alarms || [])) if (typeof a === 'string' && a.includes('T')) {
       const [fd, ft] = a.split('T');

@@ -40,6 +40,7 @@
           homes/main/events = 우리집 일정 (보라 · 읽기만)
 알림      home-cron 5분 · brain_events.alarms  숫자=몇 분 전 · 'd9'=하루 전 오전 9시 · 'YYYY-MM-DDTHH:MM'=직접
           → 사장님 폰의 우리집 알림 길(who 'me') · 누르면 /brain/  ⚠️ 우리집 알림을 켠 폰에만 옴
+          ⚠️ 26-10-28 전에는 종일 일정의 「몇 분 전」이 조용히 안 울림 (「건축과 벌금내기」 종일 + 30·10·0·60분 → 0통) → 오전 9시 기준으로 고침 · 화면 안내도
 Claude    tools/brain.py — issues · issue · doing · check(🔎+🤖 한 줄) · worry · solved · log · notes
           🔴 고친 뒤 check 까지만. 「완료」는 사장님이 앱에서
           🔴 맥북 대화에서 사장님이 말한 고민·결정은 대화 끝에 worry / log 로 (추측은 적지 않음)
