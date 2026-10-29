@@ -5,10 +5,14 @@
      GET  ?a=health    환경변수가 들어 있나만 (값은 안 보여줌)
      POST {a:'workout', token, who}   운동 다 함 → 상대 + 탭에 알림 (하루 한 번)
      POST {a:'test', token}           내 폰으로 시험 알림
+     📚 26-10-29 세무사 박나은 (공부)
+     POST {a:'stIn'|'stOut', token}   공부 시작·끝 — 박나은(her) · 시각은 서버가 찍음
+     POST {a:'cheer', token, text}    📣 응원 — 상대 폰으로 (cheers/{id} 에 남김)
    🔴 POST 는 로그인 토큰을 확인하고, 우리집 두 사람 이메일일 때만 합니다
    ═══════════════════════════════════════════════════════════ */
 import { admin, HOME, vapidPublic, whoByToken, push, partner, members, nameOf } from './_home.mjs';
 import { kst } from '../../public/home/core.js';
+import { stDay, applySt, isOpen, hm, dur, dayMin } from '../../public/home/study.js';
 
 const H = { 'content-type': 'application/json', 'cache-control': 'no-store' };
 const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: H });
@@ -64,6 +68,33 @@ export default async (req) => {
       // 📜 앱이 열리면 가운데 「어명」으로 띄우려고 남겨 둡니다 (26-10-06 · 화면이 read:true 로 바꿈)
       await db.doc(`${HOME}/msgs/${id}`).set({ from: 'me', to: 'her', text, at, date: kst().date, read: false });
       const r = await push(db, ['her'], `📜 어명이오! — ${nameOf(m, 'me')}`, text, `msg-${at}`);
+      return J({ ok: true, ...r });
+    }
+    /* 📚 공부 시작·끝 (26-10-29) — 사장님: 「공부 서로서로 같이 하는 용도 · 응원하는 사람이 있다」
+       시각은 서버가 찍음 · 시작·끝마다 응원하는 사람 폰에 알림 */
+    if (['stIn', 'stOut'].includes(body.a)) {
+      if (who !== 'her') return J({ ok: false, error: '박나은 폰에서만 찍을 수 있어요' }, 403);
+      const kind = body.a === 'stIn' ? 'in' : 'out', at = Date.now();
+      let day = stDay(at), ref = db.doc(`${HOME}/study/${day}`), doc = (await ref.get()).data() || { date: day, sessions: [] };
+      if (kind === 'out' && !isOpen(doc)) {   // 새벽 5시 넘어 퇴근 — 어제 것을 닫음
+        const y = new Date(Date.parse(day + 'T00:00:00Z') - 864e5).toISOString().slice(0, 10), yr = db.doc(`${HOME}/study/${y}`), yd = (await yr.get()).data();
+        if (isOpen(yd)) { day = y; ref = yr; doc = yd; }
+      }
+      const r = applySt(doc, kind, at);
+      if (r.err) return J({ ok: false, error: r.err }, 400);
+      r.doc.date = day;
+      await ref.set(r.doc);
+      const m = await members(db), nm = nameOf(m, 'her');
+      const 글 = kind === 'in' ? [`📚 ${nm} 공부 시작 ${hm(at)}`, '응원 한마디 보내 주세요 📣'] : [`🌙 ${nm} 공부 끝 ${hm(at)}`, `오늘 ${dur(dayMin(r.doc))} — 수고했다고 말해 주세요`];
+      await push(db, ['me'], 글[0], 글[1], `study-${kind}`).catch(() => {});
+      return J({ ok: true, at, day });
+    }
+    if (body.a === 'cheer') {   // 📣 응원 — 둘 다 보낼 수 있음 (받는 사람 = 상대)
+      const text = String(body.text || '').trim().slice(0, 80);
+      if (!text) return J({ ok: false, error: '응원 글이 없어요' }, 400);
+      const m = await members(db), at = Date.now(), to = partner(who);
+      await db.doc(`${HOME}/cheers/c${at}`).set({ from: who, to, text, at, date: kst().date });
+      const r = await push(db, [to], `📣 ${nameOf(m, who)}의 응원`, text, `cheer-${at}`);
       return J({ ok: true, ...r });
     }
     if (body.a === 'test') {

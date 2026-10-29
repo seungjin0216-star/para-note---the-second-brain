@@ -4,11 +4,16 @@
      ⏰ 1시간이 지나도 안 먹으면   → 먹을 사람 + 상대 + 탭   (사장님: 「안 먹으면 1시간 이후 알림」)
      📅 일정 1시간 전             → 그 일정 사람 + 탭
      📅 아침 8시 · 일정 있는 날    → 둘 다 + 탭  「오늘 일정 확인하세요」
+     📚 26-10-29 세무사 박나은 — 쉬는 날 2번째 경고 · 4시간 모자람 · 월요일 아침 주간 리포트
+     💊 26-10-29 약 알림 끔 — 사장님 「약복용 없애줘. 진짜 안 쓰게 됨」 (약 기록은 그대로 둠)
    ⚠️ 같은 알림은 하루 한 번 — notified/{날짜} 에 적어 둡니다
    ⚠️ 서버는 UTC 입니다. 날짜·시각은 전부 core.js 의 kst() 로
    ═══════════════════════════════════════════════════════════ */
 import { admin, HOME, readCol, members, push, partner, nameOf } from './_home.mjs';
-import { kst, medsFor, hm2min, eventsOn, SLOTS, SLOT_LABEL, slotMin, medNow } from '../../public/home/core.js';
+import { kst, medsFor, hm2min, eventsOn, SLOTS, SLOT_LABEL, slotMin, medNow, addDays } from '../../public/home/core.js';
+import * as S from '../../public/home/study.js';
+
+const 약알림 = false;   // 💊 26-10-29 끔 — 다시 쓰려면 true
 
 export const config = { schedule: '*/5 * * * *' };
 
@@ -29,7 +34,7 @@ export default async () => {
      ⚠️ 약의 하루는 새벽 5시에 바뀝니다 (00:30 자기 전 = 그날 약). 날짜·분은 medNow() 로 */
   const md = medNow(), mdRef = db.doc(`${HOME}/notified/${md.day}`);
   const mdNoted = md.day === today ? noted : ((await mdRef.get()).data() || {}), mdMark = {};
-  for (const who of ['me', 'her']) {
+  for (const who of 약알림 ? ['me', 'her'] : []) {
     const all = medsFor(Object.values(meds), who, md.day);
     for (const [slot, time] of SLOTS) {
       const t = slotMin(slot);
@@ -84,6 +89,33 @@ export default async () => {
       if (울릴때(fd, hm2min(ft))) jobs.push(once(`brain_${e.id}_${a}`, () => push(db, ['me'], `🔔 ${e.title}`, `${e.date.slice(5).replace('-', '/')} ${e.time || '종일'}`, `brain-${e.id}`, '/brain/')));
     }
   } catch (err) { console.log('제2의뇌 알림 못 함: ' + err.message); }
+
+  /* 📚 공부 — 사장님 「주 1회 쉬는 것까지는 괜찮으나 2회 이상 쉬면 안 되게 · 하루 4시간」
+     ⚠️ 공부의 하루는 새벽 5시에 바뀜 (S.stDay) · 알림 중복 막기는 그 공부 날짜의 notified 에 */
+  try {
+    const sd = S.stDay(), sRef = db.doc(`${HOME}/notified/${sd}`), sNoted = sd === today ? noted : ((await sRef.get()).data() || {}), sMark = {};
+    const sOnce = async (key, fn) => { if (sNoted[key] || sMark[key] || mark[key]) return; sMark[key] = Date.now(); await fn(); };
+    const study = await readCol(db, 'study', ['date', '>=', addDays(sd, -14)]);
+    const doc = study[sd], nowMs = Date.now(), nm = nameOf(m, 'her');
+
+    /* 🚨 쉬는 날 — 이번 주에 이미 하루 쉬었는데 오늘 밤 9시까지 출근이 없으면 둘 다에게 */
+    const k = kst(), start = S.startDay(study) || Object.keys(study).sort()[0];
+    if (start && k.min >= 21 * 60 && sd === today) {
+      const r = S.weekReport(study, {}, S.weekStart(sd), sd, nowMs);
+      const 쉰 = r.days.filter(d => d.date < sd && d.st === 'rest').length;
+      if (!S.sessions(doc).length && 쉰 >= S.REST_OK) jobs.push(sOnce('rest2', () => push(db, ['me', 'her'], `🚨 ${nm} 오늘 쉬면 이번 주 ${쉰 + 1}번째 쉬는 날`, '주 1번까지만 쉬기로 했어요 — 지금이라도 ▶ 공부 시작!', 'study-rest')));
+      const min = S.dayMin(doc, nowMs);
+      if (S.sessions(doc).length && !S.isOpen(doc) && min < S.MIN_DAY) jobs.push(sOnce('short', () => push(db, ['her'], `⏳ 오늘 ${S.dur(min)} — 4시간까지 ${S.dur(S.MIN_DAY - min)}`, '조금만 더 하면 오늘 목표!', 'study-short')));
+    }
+    /* 📊 주간 리포트 — 월요일 아침 8시 (지난주 월~일 · 일요일 밤 12시 넘어 퇴근해도 들어가게 다음 날 아침에) */
+    if (k.wd === 1 && k.min >= 8 * 60 && k.min < 11 * 60) {
+      const ws = addDays(S.weekStart(today), -7);
+      const [all, logs] = await Promise.all([readCol(db, 'study'), readCol(db, 'studyLogs')]);
+      const r = S.weekReport(all, logs, ws, today, nowMs);
+      if (r.study || r.rest) jobs.push(once('weekly', () => push(db, ['me', 'her'], `📊 ${nm} 지난주 공부 (${ws.slice(5).replace('-', '/')}~)`, S.reportLine(r), 'study-week')));
+    }
+    if (Object.keys(sMark).length) jobs.push(sRef.set(sMark, { merge: true }));
+  } catch (err) { console.log('공부 알림 못 함: ' + err.message); }
 
   await Promise.all(jobs);
   if (Object.keys(mark).length) await notedRef.set(mark, { merge: true });

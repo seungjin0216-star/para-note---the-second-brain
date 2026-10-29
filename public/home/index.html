@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>우리집</title>
+<title>세무사 박나은</title>
 <link rel="manifest" href="/home/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="/home/icon.svg">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="우리집">
+<meta name="apple-mobile-web-app-title" content="세무사 박나은">
 <link rel="apple-touch-icon" href="/home/icon-192.png">
 <!--
   우리집 대시보드 — 갤럭시탭(가로) = 거실 대시보드 · 폰 = 빠른 입력
@@ -406,16 +406,69 @@ body.phone #toast{left:50%;right:auto;transform:translateX(-50%);bottom:calc(80p
 #eo .dog .say{margin-top:22px;font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:clamp(24px,7vw,34px);line-height:1.4;color:#fde68a;text-shadow:0 2px 0 #7c2d12;opacity:0;animation:eoFade .5s ease 2.6s forwards}
 #eo .dog .again{animation-delay:3.3s}
 @media (prefers-reduced-motion:reduce){#eo .cry,#eo .paper,#eo .seal,#eo .ok{animation-duration:.01s;animation-delay:0s}}
+
+/* ── 📚 세무사 박나은 (26-10-29) — 공부 · 회독 · 주간 리포트 ── */
+.m-study{--c:#818cf8}
+.sgrid{display:grid;grid-template-columns:1fr;gap:14px}
+body.tabL .sgrid{grid-template-columns:1.1fr 1fr}
+.hero{background:linear-gradient(135deg,#312e81cc,#1e293bcc);border-color:#6366f166}
+.hero .now{font-size:15px;color:#c7d2fe;font-weight:700}
+.hero .big{font-size:40px;font-weight:900;letter-spacing:-1px;margin:4px 0 2px}
+.hero .big small{font-size:15px;color:var(--muted);font-weight:700;margin-left:6px;letter-spacing:0}
+.goal{height:12px;border-radius:99px;background:#0f172a;overflow:hidden;margin:10px 0 4px;border:1px solid #33415599}
+.goal i{display:block;height:100%;background:linear-gradient(90deg,#818cf8,#34d399);border-radius:99px;transition:width .4s}
+.goal-t{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.stbtns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.stbtns .btn{flex:1 1 140px;padding:16px 14px;font-size:17px;border-radius:14px}
+.btn.go{background:#4f46e5}.btn.stop{background:#e11d48}.btn.prog{background:#0f766e}.btn.cheer{background:#db2777}
+.live{display:inline-block;width:9px;height:9px;border-radius:50%;background:#34d399;margin-right:6px;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.bub{background:#831843aa;border:1px solid #f472b688;border-radius:14px 14px 14px 4px;padding:10px 13px;font-size:15px;font-weight:700;margin-top:12px}
+.bub small{display:block;font-size:11.5px;color:#fbcfe8;font-weight:600;margin-bottom:2px}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.wd{border-radius:12px;padding:8px 2px;text-align:center;background:#0f172a;border:1px solid #33415599;min-height:76px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}
+.wd b{font-size:12px;color:var(--muted);font-weight:700}.wd span{font-size:16px;font-weight:800}.wd small{font-size:11px;font-weight:700}
+.wd.ok{background:#064e3b88;border-color:#34d39988}.wd.ok small{color:#6ee7b7}
+.wd.short{background:#78350f66;border-color:#fbbf2488}.wd.short small{color:#fcd34d}
+.wd.rest{background:#88133766;border-color:#fb718588}.wd.rest small{color:#fda4af}
+.wd.today{border:2px solid #818cf8}.wd.today small{color:#c7d2fe}
+.wd.future,.wd.before{opacity:.45}
+.wk-note{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+.bk{padding:10px 0;border-top:1px solid #33415580}.bk:first-child{border-top:0}
+.bk .t{display:flex;justify-content:space-between;gap:8px;font-size:14.5px;font-weight:700}.bk .t small{color:var(--muted);font-weight:600;font-size:12.5px}
+.bk .bar{height:10px;border-radius:99px;background:#0f172a;margin-top:6px;overflow:hidden;border:1px solid #33415580}
+.bk .bar i{display:block;height:100%;background:var(--k);border-radius:99px}
+.bk .rd{display:inline-block;font-size:11px;font-weight:800;padding:1px 6px;border-radius:6px;background:color-mix(in srgb,var(--k) 30%,transparent);color:var(--k);margin-left:4px}
+.tot{font-size:28px;font-weight:900}.tot small{font-size:13px;color:var(--muted);font-weight:600;margin-left:4px}
+.rp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rp div{background:#0f172a;border:1px solid #33415599;border-radius:12px;padding:10px 6px;text-align:center}
+.rp b{display:block;font-size:20px;font-weight:900}.rp small{font-size:11.5px;color:var(--muted);font-weight:600}
+.rp .bad b{color:var(--bad)}.rp .good b{color:#6ee7b7}
+.lg{font-size:13.5px;padding:7px 0;border-top:1px solid #33415566;display:flex;gap:8px}.lg:first-child{border-top:0}
+.lg i{font-style:normal;width:9px;height:9px;border-radius:50%;background:var(--k);margin-top:5px;flex:none}
+.lg small{color:var(--muted);margin-left:auto;white-space:nowrap}
+.bpick{display:flex;gap:6px;flex-wrap:wrap}
+.bpick button{all:unset;cursor:pointer;border:2px solid #475569;border-radius:12px;padding:8px 11px;font-size:14px;font-weight:700}
+.bpick button.on{border-color:var(--k);background:color-mix(in srgb,var(--k) 25%,transparent)}
+.ulist{display:flex;flex-direction:column;gap:4px;max-height:42dvh;overflow:auto;margin-top:6px;padding-right:2px}
+.ulist h5{font-size:12px;color:var(--muted);margin:8px 0 2px}
+.ulist button{all:unset;cursor:pointer;display:flex;gap:8px;padding:9px 10px;border-radius:10px;background:#0f172a;border:1px solid #33415599;font-size:14px}
+.ulist button em{font-style:normal;color:var(--muted);width:22px;text-align:right;flex:none}
+.ulist button.dn{background:color-mix(in srgb,var(--k) 16%,#0f172a)}
+.ulist button.on{border:2px solid var(--k);font-weight:800}
+.stp{display:flex;align-items:center;gap:12px}.stp b{font-size:20px;min-width:70px;text-align:center}
+.prv{margin-top:12px;background:#0f172a;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6}
 </style>
 </head>
 <body>
-<div id="app"><div class="gate"><h1>🏠 우리집</h1><p>불러오는 중…</p></div></div>
+<div id="app"><div class="gate"><h1>📚 세무사 박나은</h1><p>불러오는 중…</p></div></div>
 <div id="ov"><div id="sheet"></div></div>
 <div id="toast"></div>
 <div id="night"><div class="tm num" id="nightTm"></div><div id="nightDt" style="font-size:22px"></div><div id="nightInfo"></div><div id="nightNext" style="font-size:16px;margin-top:8px"></div><div style="font-size:12.5px;margin-top:28px;color:#475569">화면을 누르면 대시보드로 돌아갑니다</div></div>
 
 <script type="module">
 import * as C from './core.js?v=20261003b';   // ⚠️ core.js 를 고치면 이 v= 도 바꿀 것 (옛 파일이 남아 「medsFor is not a function」 으로 통째로 멈춘 적 있음)
+import * as S from './study.js?v=20261029';   // 📚 공부 계산 — 알림 서버(home-cron·home-api)도 같은 파일 · 고치면 v= 도
 
 /* ═════════════ 어디서 열렸나 ═════════════
    paranote.netlify.app/home/  → 실제 (구글 로그인 + Firestore 실시간)
@@ -428,12 +481,12 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 
 /* ═════════════ 데이터 ═════════════ */
-const COLS = ['meds', 'medLogs', 'events', 'food', 'routines', 'workLogs', 'chores', 'msgs'];   // msgs = ✉️ 어명 (26-10-06)
-const D = { members: {}, meds: {}, medLogs: {}, events: {}, food: {}, routines: {}, workLogs: {}, chores: {}, choreLogs: {}, subs: {}, msgs: {} };   // choreLogs·subs 는 쓰기만 (화면은 안 읽음)
+const COLS = ['meds', 'medLogs', 'events', 'food', 'routines', 'workLogs', 'chores', 'msgs', 'study', 'studyLogs', 'cheers'];   // msgs = ✉️ 어명 (26-10-06) · study·studyLogs·cheers = 📚 (26-10-29)
+const D = { members: {}, meds: {}, medLogs: {}, events: {}, food: {}, routines: {}, workLogs: {}, chores: {}, choreLogs: {}, subs: {}, msgs: {}, study: {}, studyLogs: {}, cheers: {} };   // choreLogs·subs 는 쓰기만 (화면은 안 읽음)
 let ME = null;            // 이 폰 주인 'me' | 'her'
 let USER = null;          // 로그인 정보
 let ROLE = ls.get('home-role', null);   // 'tab' = 거실 탭(둘 다 체크) · 'phone'
-let cur = ls.get('home-cur', 'home');
+let cur = 'study';        // 📚 26-10-29 「첫 화면 = 공부」 — 지난번에 보던 화면을 기억하지 않음
 let today = C.kst().date;
 const 이름 = w => w === 'we' ? '같이' : w === 'any' ? '아무나' : w === 'tab' ? '거실 탭' : (D.members[w] && D.members[w].name) || (w === 'me' ? '나' : '여자친구');
 const isTab = () => (ROLE || (tabLayout.matches ? 'tab' : 'phone')) === 'tab';   // 고르지 않았으면 가로 큰 화면 = 거실 탭
@@ -448,6 +501,7 @@ function demoDB() {
   const load = () => { const s = ls.get(KEY, null); if (s) Object.assign(D, s); };
   load();
   if (!D.members.me) seedDemo();
+  if (!D._studySeed) { seedStudy(); D._studySeed = 1; ls.set(KEY, D); }
   ME = ls.get('home-demo-me', 'me');
   bc && (bc.onmessage = () => { load(); render(); });
   const save = () => { ls.set(KEY, D); bc && bc.postMessage(1); };
@@ -490,6 +544,21 @@ function seedDemo() {
   put('chores', { name: '냉장고 정리', who: 'any', every: { type: 'days', n: 30 }, lastDone: A(-20), created: A(-30) });
 }
 
+/* 📚 미리보기용 지난 열흘 — 쉰 날 하루 · 4시간 모자란 날 하루 · 진도 몇 줄 */
+function seedStudy() {
+  D.study = D.study || {}; D.studyLogs = D.studyLogs || {}; D.cheers = D.cheers || {};
+  const sd = S.stDay(), at = (s, h, m = 0) => Date.parse(`${s}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00+09:00`);
+  for (let i = 10; i >= 1; i--) {
+    const s = C.addDays(sd, -i); if (i === 3) continue;   // 사흘 전 = 쉰 날
+    const h = i === 5 ? 3 : 4 + (i % 3);
+    D.study[s] = { date: s, sessions: [{ in: at(s, 9, 30), out: at(s, 12, 30) }, { in: at(s, 13, 30), out: at(s, 13, 30) + (h - 3) * 3600e3 + 20 * 60e3 }] };
+  }
+  [['fa', 1, 24, 9], ['fa', 2, 4, 6], ['fa', 2, 6, 2], ['ca', 1, 7, 4], ['tx', 1, 5, 1]].forEach(([book, round, unit, d], n) => {
+    const s = C.addDays(sd, -d); D.studyLogs['l' + n] = { id: 'l' + n, book, round, unit, at: at(s, 18, n), date: s, by: 'her' };
+  });
+  D.cheers.c1 = { id: 'c1', from: 'me', to: 'her', text: '오늘도 화이팅! 세무사님 💪', at: Date.now() - 3600e3, date: today };
+}
+
 /* ── 실제: Firebase ── */
 const FV = '10.12.2', G = m => `https://www.gstatic.com/firebasejs/${FV}/firebase-${m}.js`;
 let FB = null;
@@ -516,7 +585,7 @@ function startLive() {
     ME = Object.keys(D.members).find(k => (D.members[k].email || '').toLowerCase() === email) || null;
     render();
   }, fail));
-  const since = { medLogs: C.addDays(today, -2), workLogs: C.addDays(today, -70), msgs: C.addDays(today, -7) };
+  const since = { medLogs: C.addDays(today, -2), workLogs: C.addDays(today, -70), msgs: C.addDays(today, -7), study: C.addDays(today, -70), cheers: C.addDays(today, -14) };   // studyLogs 는 전부 (회독 계산에 처음부터 필요)
   COLS.forEach(n => {
     const q = since[n] ? F.query(col(n), F.where('date', '>=', since[n])) : col(n);
     unsubs.push(F.onSnapshot(q, s => { const o = {}; s.forEach(d => { o[d.id] = { id: d.id, ...d.data() }; }); D[n] = o; schedule(); }, fail));
@@ -552,7 +621,7 @@ let rq = 0; function schedule() { if (rq) return; rq = requestAnimationFrame(() 
 
 /* ═════════════ 로그인 화면들 ═════════════ */
 function gate() {
-  $('#app').innerHTML = `<div class="gate"><h1>🏠 우리집</h1><p>둘만 쓰는 집 대시보드입니다.<br>구글 계정으로 들어와 주세요.</p><button class="btn" id="login">구글로 로그인</button></div>`;
+  $('#app').innerHTML = `<div class="gate"><h1>📚 세무사 박나은</h1><p>둘이 같이 쓰는 공부 기록장입니다.<br>구글 계정으로 들어와 주세요.</p><button class="btn" id="login">구글로 로그인</button></div>`;
   $('#login').onclick = async () => {
     const { A, auth } = FB, p = new A.GoogleAuthProvider();
     try { await A.signInWithPopup(auth, p); }
@@ -579,7 +648,10 @@ function whoAmI() {
 
 /* ═════════════ 틀 — 위 메뉴 (26-10-02 · 사장님이 주신 재미나이 구성) ═════════════
    탭(가로): 위에 로고 · 메뉴 · 시계 · 탁상 시계 · 설정  /  폰: 위에 로고·시계, 아래 메뉴 */
-const SCR = [['home', '🏠', '대시보드'], ['med', '💊', '약'], ['cal', '📅', '일정'], ['fridge', '🧊', '냉장고'], ['gym', '💪', '운동'], ['chore', '🧹', '집안일']];
+/* 📚 26-10-29 「세무사 박나은」 — 메뉴는 공부·일정·집안일만. 대시보드·약·냉장고·운동은 메뉴에서만 숨김 (⚙️ 설정 맨 아래에서 열 수 있음 · 기록은 그대로)
+   옛 메뉴: [['home','🏠','대시보드'], ['med','💊','약'], ['cal','📅','일정'], ['fridge','🧊','냉장고'], ['gym','💪','운동'], ['chore','🧹','집안일']] */
+const SCR = [['study', '📚', '공부'], ['cal', '📅', '일정'], ['chore', '🧹', '집안일']];
+const HIDDEN = [['home', '🏠', '대시보드'], ['med', '💊', '약'], ['fridge', '🧊', '냉장고'], ['gym', '💪', '운동']];
 function layout() {
   const tab = tabLayout.matches;
   document.body.classList.toggle('tabL', tab); document.body.classList.toggle('phone', !tab);
@@ -605,7 +677,7 @@ function navHtml(cls) {
 }
 function hdrHtml() {
   const k = C.kst();
-  return `<div class="logo">🏠 <span>우리집</span></div>
+  return `<div class="logo" style="background:linear-gradient(90deg,#4f46e5,#7c3aed)">📚 <span>세무사 박나은</span></div>
     <nav class="tnav">${navHtml('tn')}</nav>
     <div class="hr">
       <div class="clk"><b class="num">${k.time}</b><small>${긴날짜(today)}</small></div>
@@ -627,7 +699,7 @@ function render() {
   if (!DEMO && pushOn() && (ME || isTab()) && ls.get('home-push-who', null) !== (isTab() ? 'tab' : ME) && !window.__resub) { window.__resub = 1; pushSubscribe(true); }   // ⚠️ 26-10-03 「누구」 없이 등록됐던 알림을 다시 붙임
   $('#hdr').innerHTML = hdrHtml();
   $('#btm').innerHTML = navHtml('bt');
-  const R = { home: rHome, med: rMed, cal: rCal, fridge: rFridge, gym: rGym, chore: rChore, set: rSet }[cur] || rHome;
+  const R = { study: rStudy, home: rHome, med: rMed, cal: rCal, fridge: rFridge, gym: rGym, chore: rChore, set: rSet }[cur] || rStudy;
   const { body, fit } = R();
   const main = $('#main'); main.classList.toggle('fit', !!fit && document.body.classList.contains('tabL'));
   if (body !== lastHtml) { const y = main.scrollTop; main.innerHTML = body; main.scrollTop = y; lastHtml = body; }
@@ -719,7 +791,7 @@ function 폭죽(cv) {
     else g.clearRect(0, 0, W, H);
   })(t0);
 }
-function go(k) { cur = k; ls.set('home-cur', k); lastHtml = ''; render(); $('#main').scrollTop = 0; }
+function go(k) { cur = k; lastHtml = ''; render(); $('#main').scrollTop = 0; }
 /* 화면 머리 — 큰 제목 · 설명 · 오른쪽 버튼 */
 const head = (icon, title, sub, acts = '', mod = '') => `<div class="vh"><div><h2><span class="ic ${mod}">${icon}</span>${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div><div class="acts">${acts}</div></div>`;
 
@@ -810,6 +882,114 @@ function rHome() {
 /* ═════════════ 💊 약 ═════════════
    사장님: 「세트 없애고 각각」 「먹는 사람이 따로라 가시적으로 잘 나눠져야」
    아침·점심·저녁 줄 × 나 | 여자친구 칸 · 폰에서도 두 사람 다 (내 것만 체크) */
+/* ═════════════ 📚 공부 (26-10-29) ═════════════
+   사장님: 「공부시간보다 더 중요한 것은 … 얼마나 규칙적으로 나오느냐와 … 공부 진도량」
+          「공부 서로서로 같이 하는 용도이며, 응원하는 사람이 있다」
+   박나은(her) 폰  ▶ 공부 시작 · ■ 공부 끝 · 📚 여기까지 했다   ← 찍는 사람
+   장승진(me) 폰   같이 보기 + 📣 응원 보내기                     ← 응원하는 사람
+   ⚠️ 시작·끝 시각은 서버가 찍음 (home-api stIn·stOut) — 폰 시계를 믿지 않음 · 미리보기만 이 브라우저에서
+   ⚠️ 공부의 하루는 새벽 5시에 바뀜 (S.stDay) — 계산은 전부 study.js (알림 서버와 같은 파일) */
+let stWk = 0;   // 주간 리포트 — 0 이번 주 · -1 지난주 …
+const 공부자 = () => !isTab() && ME === 'her';
+const 응원자 = () => !isTab() && !!ME;
+/** 지금 열려 있는 공부 — 오늘 것, 없으면 「끝」을 안 누른 어제 것 (새벽 5시 넘어 끝내도 어제로 닫힘 · 서버와 같음) */
+function 열린공부() {
+  const sd = S.stDay();
+  if (S.isOpen(D.study[sd])) return { day: sd, doc: D.study[sd] };
+  const y = C.addDays(sd, -1);
+  if (S.isOpen(D.study[y])) return { day: y, doc: D.study[y], yesterday: true };
+  return null;
+}
+const 책색 = k => (S.bookOf(k) || {}).c || '#94a3b8';
+const 단원이름 = (k, u) => { const b = S.bookOf(k), x = b && b.units[u - 1]; return x ? (x.s ? x.s + ' · ' : '') + x.t : ''; };
+function rStudy() {
+  const sd = S.stDay(), now = Date.now(), doc = D.study[sd], open = 열린공부(), min = S.dayMin(doc, now), nm = 이름('her');
+  const 받은응원 = Object.values(D.cheers || {}).filter(x => x.to === ME).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const 오늘응원 = 받은응원.find(x => x.date === today || now - (x.at || 0) < 12 * 3600e3);
+  /* ① 오늘 */
+  const sess = S.sessions(doc), 첫 = sess[0], 끝 = sess.length && sess[sess.length - 1].out;
+  const 지금 = open ? `<span class="live"></span>${open.yesterday ? '어제부터 ' : ''}공부 중 · ${S.hm(open.doc.sessions[open.doc.sessions.length - 1].in)}부터`
+    : !sess.length ? (공부자() ? '오늘 아직 시작 전이에요' : `${esc(nm)} 오늘 아직 시작 전`) : `오늘 공부 끝 · ${S.hm(끝)}`;
+  const pct = Math.min(100, Math.round(min / S.MIN_DAY * 100));
+  const 남음 = S.MIN_DAY - min;
+  let btns = '';
+  if (공부자()) btns = `<div class="stbtns">${open ? `<button class="btn stop" data-act="stOut">■ 공부 끝</button>` : `<button class="btn go" data-act="stIn">▶ 공부 시작</button>`}
+      <button class="btn prog" data-act="stLog">📚 여기까지 했다</button></div>`;
+  else if (응원자()) btns = `<div class="stbtns"><button class="btn cheer" data-act="cheerNew">📣 ${esc(nm)}에게 응원 보내기</button></div>`;
+  const hero = `<section class="card hero">
+      <div class="now">${지금}</div>
+      <div class="big num">${S.dur(min)}<small>/ 하루 4시간</small></div>
+      <div class="goal"><i style="width:${pct}%"></i></div>
+      <div class="goal-t"><span>${첫 ? `첫 시작 ${S.hm(첫.in)} · ${sess.length}번 앉음` : '새벽 5시에 하루가 바뀝니다'}</span><span>${남음 > 0 ? `4시간까지 ${S.dur(남음)}` : '🎉 오늘 목표 달성'}</span></div>
+      ${btns}
+      ${오늘응원 ? `<div class="bub"><small>📣 ${esc(이름(오늘응원.from))}의 응원 · ${S.hm(오늘응원.at)}</small>${esc(오늘응원.text)}</div>` : ''}
+      ${open && open.yesterday ? `<p class="wk-note">⚠️ 어제 「공부 끝」을 안 눌렀어요 — 지금 누르면 어제 공부로 닫힙니다</p>` : ''}
+    </section>`;
+  /* ② 이번 주 달력 + 주간 리포트 (같은 주) */
+  const ws = C.addDays(S.weekStart(sd), 7 * stWk), r = S.weekReport(D.study, D.studyLogs, ws, sd, now);
+  const 글 = { ok: '✓ 4시간', short: '모자람', rest: '쉰 날', today: '오늘', future: '', before: '' };
+  const cells = r.days.map(d => `<div class="wd ${d.st}${d.date === sd ? ' today' : ''}"><b>${C.DAY[C.wdOf(d.date)]} ${+d.date.slice(8)}</b><span class="num">${d.min >= 60 ? (d.min / 60).toFixed(1) : d.min >= 1 ? Math.round(d.min) + '분' : d.st === 'rest' ? '😴' : '–'}</span><small>${d.noOut ? '끝 안 누름' : 글[d.st]}</small></div>`).join('');
+  const 쉰 = r.rest, 쉼글 = 쉰 > S.REST_OK ? `<b class="red-t">🚨 이번 주 ${쉰}번 쉬었어요 — 주 1번까지만</b>` : 쉰 === S.REST_OK ? (stWk === 0 ? '😴 이번 주 쉬는 날 다 썼어요 — 남은 날은 꼭 출석' : '😴 쉰 날 1번') : '😴 쉬는 날은 주 1번까지 괜찮아요';
+  const 주제목 = stWk === 0 ? '이번 주' : stWk === -1 ? '지난주' : `${+ws.slice(5, 7)}/${+ws.slice(8)} 주`;
+  const week = `<section class="card m-study"><div class="ch"><div class="t"><span class="ic">🗓</span><div><h3>${주제목} 출석</h3><p>시간 = 그날 공부한 시간 · 4시간 넘으면 초록</p></div></div>
+      <div class="acts"><button class="btn sec sm" data-act="stWk" data-d="-1">‹</button>${stWk < 0 ? `<button class="btn sec sm" data-act="stWk" data-d="1">›</button>` : ''}</div></div>
+      <div class="wk">${cells}</div><p class="wk-note">${쉼글}</p></section>`;
+  const 평균 = r.study ? r.total / r.study : 0;
+  const report = `<section class="card m-study"><div class="ch"><div class="t"><span class="ic">📊</span><div><h3>${주제목} 리포트</h3><p>${+ws.slice(5, 7)}/${+ws.slice(8)} ~ ${+r.we.slice(5, 7)}/${+r.we.slice(8)} · 월요일 아침 8시에 지난주 것이 둘에게 알림</p></div></div></div>
+      <div class="rp">
+        <div class="${r.study >= 6 ? 'good' : ''}"><b class="num">${r.study}일</b><small>출석</small></div>
+        <div class="${r.rest > S.REST_OK ? 'bad' : ''}"><b class="num">${r.rest}일</b><small>쉰 날</small></div>
+        <div class="${r.short ? 'bad' : ''}"><b class="num">${r.over4}일</b><small>4시간 넘긴 날</small></div>
+        <div><b class="num">${(r.total / 60).toFixed(1)}h</b><small>총 공부</small></div>
+        <div><b class="num">${(평균 / 60).toFixed(1)}h</b><small>하루 평균</small></div>
+        <div class="${r.units ? 'good' : ''}"><b class="num">+${r.units}</b><small>진도 (단원)</small></div>
+      </div>
+      ${r.prog.filter(p => p.add).map(p => `<div class="lg" style="--k:${책색(p.k)}"><i></i><span>${p.name} +${p.add}단원</span><small>${p.z.round}회독째 ${p.z.unit}/${p.z.N}</small></div>`).join('') || '<p class="wk-note">이 주에 적은 진도가 없어요</p>'}
+      ${r.noOut ? `<p class="wk-note red-t">「공부 끝」을 안 누른 날 ${r.noOut}일 — 그날은 0시간으로 셉니다</p>` : ''}</section>`;
+  /* ③ 회독 막대 */
+  const tr = S.totalRounds(D.studyLogs);
+  const books = S.BOOKS.map(b => { const st = S.bookState(D.studyLogs, b.k);
+    return `<div class="bk" style="--k:${b.c}"><div class="t"><span>${b.name}${Array.from({ length: Math.min(st.done, 9) }, (_, i) => `<span class="rd">✓${i + 1}회독</span>`).join('')}</span><small>${st.round}회독째 · ${st.unit}/${st.N}단원 · ${st.pct}%</small></div>
+      <div class="bar"><i style="width:${st.pct}%"></i></div>${st.unit ? `<div class="wk-note" style="margin-top:4px">여기까지 · ${esc(단원이름(b.k, st.unit))}</div>` : ''}</div>`; }).join('');
+  const rounds = `<section class="card m-study"><div class="ch"><div class="t"><span class="ic">📖</span><div><h3>회독</h3><p>막대 = 지금 회독에서 몇 % · 끝까지 가면 ✓ 붙고 다음 회독</p></div></div>${공부자() ? `<button class="add" data-act="stLog">＋ 진도</button>` : ''}</div>
+      <div class="tot num">${tr.toFixed(2)}<small>회독 (전체 ${S.TOTAL}단원 기준)</small></div>${books}</section>`;
+  /* ④ 최근 진도 · 응원 */
+  const logs = Object.values(D.studyLogs || {}).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 6);
+  const logCard = `<section class="card m-study"><div class="ch"><div class="t"><span class="ic">✍️</span><h3>최근 진도</h3></div></div>
+      ${logs.map(l => `<div class="lg" style="--k:${책색(l.book)}"><i></i><span><b>${(S.bookOf(l.book) || {}).name || ''}</b> ${l.round}회독 ${l.unit}단원까지<br><small style="margin:0">${esc(단원이름(l.book, l.unit))}</small></span><small>${C.label(l.date || today)}</small></div>`).join('') || empty(공부자() ? '「📚 여기까지 했다」를 누르면 여기에 쌓여요' : '아직 적은 진도가 없어요')}</section>`;
+  const cheers = Object.values(D.cheers || {}).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 6);
+  const cheerCard = `<section class="card m-study"><div class="ch"><div class="t"><span class="ic">📣</span><h3>응원</h3></div>${응원자() ? `<button class="add" style="background:#be185d" data-act="cheerNew">${공부자() ? '💌 답장' : '＋ 응원'}</button>` : ''}</div>
+      ${cheers.map(x => `<div class="lg" style="--k:${x.from === 'me' ? 'var(--me)' : 'var(--her)'}"><i></i><span><b>${esc(이름(x.from))}</b> ${esc(x.text)}</span><small>${C.label(x.date || today)} ${S.hm(x.at)}</small></div>`).join('') || empty('아직 응원이 없어요')}</section>`;
+  const body = head('📚', '세무사 박나은', `${C.label(sd)} · 하루 4시간 · 쉬는 날은 주 1번까지`, '', 'm-study')
+    + `<div class="sgrid"><div style="display:flex;flex-direction:column;gap:14px">${hero}${week}${report}</div><div style="display:flex;flex-direction:column;gap:14px">${rounds}${logCard}${cheerCard}</div></div>`;
+  return { body };
+}
+/* 📚 여기까지 했다 — 책 → 단원 (몇 회독째) */
+function 진도판(k) { const st = S.bookState(D.studyLogs, k); return { book: k, round: st.round, unit: st.unit }; }
+function stLogSheet() {
+  const b = S.bookOf(F.book), N = b.units.length, u = +F.unit || 0, r = +F.round || 1;
+  let sec = null;
+  const list = b.units.map((x, i) => { const h = x.s && x.s !== sec ? `<h5>${esc(x.s)}</h5>` : ''; sec = x.s;
+    return h + `<button class="${i + 1 === u ? 'on' : i + 1 < u ? 'dn' : ''}" data-f="unit" data-num="1" data-v="${i + 1}"><em>${i + 1}</em>${esc(x.t)}</button>`; }).join('');
+  const 끝 = u === N;
+  const logs = { ...D.studyLogs, _new: { book: F.book, round: r, unit: u, at: Date.now() } }, tr = S.totalRounds(logs);
+  return `<h2>📚 여기까지 했다</h2>
+    <div class="lbl">어느 책</div><div class="bpick">${S.BOOKS.map(x => `<button class="${x.k === F.book ? 'on' : ''}" style="--k:${x.c}" data-act="stBook" data-v="${x.k}">${x.name}</button>`).join('')}</div>
+    <div class="lbl">몇 회독째</div><div class="stp"><button class="btn sec sm" data-act="stRound" data-d="-1">－</button><b class="num">${r}회독</b><button class="btn sec sm" data-act="stRound" data-d="1">＋</button></div>
+    <div class="lbl">어디까지 했나 — 마지막으로 끝낸 단원을 누르세요</div><div class="ulist" style="--k:${b.c}">${list}</div>
+    <div class="prv">${u ? `<b>${b.name} ${r}회독 · ${u}/${N}단원</b> → 이번 회독 <b>${Math.round(u / N * 100)}%</b>${끝 ? ` · 🎉 ${r}회독 끝! 다음은 ${r + 1}회독` : ''}<br>전체 <b>${tr.toFixed(2)}회독</b>` : '단원을 골라 주세요'}</div>
+    <div class="row2"><button class="btn sec" data-act="close">닫기</button><button class="btn" data-act="stLogSave">적기</button></div>`;
+}
+const 응원글 = ['오늘도 화이팅! 💪', '세무사 박나은 가즈아 🔥', '밥 꼭 챙겨 먹어 🍚', '오늘도 수고했어 🌙', '조금만 더! 거의 다 왔어 🏃‍♀️', '자랑스러워 ❤️'];
+function cheerSheet() {
+  const to = ME === 'me' ? 'her' : 'me';
+  return `<h2>📣 ${esc(이름(to))}에게 ${ME === 'her' ? '답장' : '응원'}</h2>
+    <div class="chips" style="margin-top:8px">${(ME === 'her' ? ['고마워 ❤️', '오늘도 버텼다 💪', '집에 가는 중 🏠', '맛있는 거 사줘 🍗'] : 응원글).map(t => `<button data-f="text" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <textarea class="field" data-in="text" rows="2" maxlength="80" placeholder="직접 쓰기 (80자까지)" style="resize:none;margin-top:10px">${esc(F.text || '')}</textarea>
+    <p style="margin:6px 2px 0;font-size:12px;color:var(--muted)">${esc(이름(to))} 폰에 바로 알림이 가고, 공부 화면에도 남아요</p>
+    <div class="row2"><button class="btn sec" data-act="close">닫기</button><button class="btn" style="background:#db2777" data-act="cheerSend">보내기</button></div>`;
+}
+
 function rMed() {
   const nowSlot = 지금시간대();
   const cnt = w => { const xs = mySets(w); return `${xs.filter(x => taken(x.key)).length}/${xs.length}`; };
@@ -968,11 +1148,13 @@ function rSet() {
       <div class="more">거실 탭은 두 사람 것을 다 체크할 수 있고 · 밤 12시~7시 탁상 시계 · 화면 계속 켜짐</div></section>
     <section class="card"><h3>🔔 알림 <small>${pushOn() ? '켜짐' : '꺼짐'}</small></h3>
       ${pushOk ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" data-act="pushOn">${pushOn() ? '다시 연결' : '이 기기에서 알림 받기'}</button><button class="btn sec" data-act="pushTest">시험 알림</button></div>` : empty('이 브라우저는 알림을 못 받습니다. 아이폰은 「홈 화면에 추가」 한 뒤 거기서 열어 주세요')}
-      <div class="more">약 시간 · 1시간 지나도 안 먹음 · 운동 끝 · 일정 1시간 전 · 일정 있는 날 아침 8시</div></section>
+      <div class="more">📚 공부 시작·끝 · 응원 · 진도 · 쉬는 날 2번째 경고(밤 9시) · 4시간 모자람 · 월요일 아침 주간 리포트 · 일정 1시간 전 · 일정 있는 날 아침 8시 (💊 약 알림은 꺼 둠)</div></section>
     <section class="card"><h3>사람</h3><div class="list">
       ${['me', 'her'].map(w => `<div class="row">${whoChip(w)}<span class="m"><small>${esc((D.members[w] || {}).email || '아직 안 들어옴')}</small></span><button class="btn sec sm" data-act="rename" data-who="${w}">이름 바꾸기</button></div>`).join('')}</div></section>
-    ${DEMO ? `<section class="card"><h3>미리보기</h3><div class="seg" style="margin:10px 0"><button class="${ME === 'me' ? 'on' : ''}" data-act="demoMe" data-v="me">나로 보기</button><button class="${ME === 'her' ? 'on' : ''}" data-act="demoMe" data-v="her">여자친구로 보기</button></div><button class="btn sec sm" data-act="demoReset">예시 데이터 처음으로</button></section>`
+    ${DEMO ? `<section class="card"><h3>미리보기</h3><div class="seg" style="margin:10px 0"><button class="${ME === 'me' ? 'on' : ''}" data-act="demoMe" data-v="me">나로 보기</button><button class="${ME === 'her' ? 'on' : ''}" data-act="demoMe" data-v="her">박나은으로 보기</button></div><button class="btn sec sm" data-act="demoReset">예시 데이터 처음으로</button></section>`
       : `<section class="card"><h3>계정</h3><div class="row"><span class="m"><b>${esc(USER && USER.email)}</b></span><button class="btn sec sm" data-act="logout">로그아웃</button></div></section>`}
+    <section class="card"><h3>숨긴 화면</h3><div class="more">메뉴에서만 뺐습니다 — 기록은 그대로 있어요</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${HIDDEN.map(([k, i, l]) => `<button class="btn sec sm" data-go="${k}">${i} ${l}</button>`).join('')}</div></section>
   </div>`;
   return { body };
 }
@@ -1065,6 +1247,8 @@ function drawSheet() {
       <p class="hint" style="margin:6px 2px 0;font-size:12px;color:var(--muted)">${이름('her')} 폰에 바로 알림이 가고, 앱을 열면 📜 어명으로 뜹니다 (120자까지)</p>
       ${(() => { const l = Object.values(D.msgs || {}).filter(x => x.from === 'me').sort((a, b) => (b.at || 0) - (a.at || 0))[0]; return l ? `<p class="hint" style="margin:4px 2px 0;font-size:12px;color:var(--muted)">지난 어명 「${esc(String(l.text).slice(0, 18))}」 — ${l.read ? '✅ 받듦' : '⏳ 아직 안 봄'}</p>` : ''; })()}
       <div class="row2"><button class="btn" data-act="msgSend">보내기</button></div>`;
+  } else if (sheetKind === 'stLog') { h = stLogSheet();
+  } else if (sheetKind === 'cheer') { h = cheerSheet();
   } else if (sheetKind === 'rename') {
     h = `<h2>이름 바꾸기</h2><input class="field" data-in="name" value="${esc(F.name)}"><div class="row2"><button class="btn" data-act="renameSave">저장</button></div>`;
   }
@@ -1099,7 +1283,8 @@ document.addEventListener('click', async e => {
   const g = e.target.closest('[data-go]'); if (g) return go(g.dataset.go);
   // 아래 판 안의 고르기
   const fb = e.target.closest('[data-f]'); if (fb) { setF(fb.dataset.f, fb.dataset.num ? +fb.dataset.v : fb.dataset.v);
-    return drawSheet(); }
+    const y = ($('#sheet .ulist') || {}).scrollTop; drawSheet(); if (y) $('#sheet .ulist').scrollTop = y;   // 📚 단원 목록 — 누를 때마다 맨 위로 튀지 않게
+    return; }
   const ft = e.target.closest('[data-ftog]'); if (ft) { const k = ft.dataset.ftog, v = /days$/.test(k) ? +ft.dataset.v : ft.dataset.v;
     const arr = [...(getF(k) || (k === 'repeat.days' ? [C.wdOf(F.date)] : []))]; const i = arr.indexOf(v); i < 0 ? arr.push(v) : arr.splice(i, 1);
     setF(k, typeof v === 'number' ? arr.sort() : arr.sort()); return drawSheet(); }
@@ -1221,6 +1406,35 @@ document.addEventListener('click', async e => {
       await DB.put('chores', F.id, { name, who: 'any', ...(F.once ? {} : { every: F.every || CYCLES[0][2] }), lastDone: F.lastDone || '' });
       closeSheet(); return toast('🧹 저장했습니다'); }
     case 'chOff': { const cid = F.id; await DB.put('chores', cid, { off: true }); closeSheet(); return toast('뺐습니다', () => DB.put('chores', cid, { off: false })); }
+    /* 📚 공부 (26-10-29) — 시작·끝은 서버가 시각을 찍음 · 미리보기만 이 브라우저에서 study.js 로 */
+    case 'stIn': case 'stOut': { if (!공부자()) return toast('박나은 폰에서만 찍을 수 있어요');
+      b.disabled = true; const kind = a === 'stIn' ? 'in' : 'out', 열림 = 열린공부();
+      if (DEMO) { const at = Date.now(), o = kind === 'out' && 열린공부(), day = o ? o.day : S.stDay(at), r = S.applySt(D.study[day], kind, at);
+        if (r.err) { b.disabled = false; return toast('⚠️ ' + r.err); }
+        await DB.put('study', day, { ...r.doc, date: day });
+      } else { const r = await api({ a: a });
+        if (!r.ok) { b.disabled = false; return toast('⚠️ ' + (r.error || '못 찍었어요 — 다시 눌러 주세요')); } }
+      if (kind === 'in') return toast(`📚 ${C.kst().time} 공부 시작! ${이름('me')}에게 알렸어요`);
+      const m = 열림 ? S.dayMin(열림.doc, Date.now()) : 0;   // ⚠️ 실제는 서버 기록이 화면에 늦게 옴 → 누르기 전 것으로 셈
+      return toast(`🌙 수고했어요! 오늘 ${S.dur(m)}${m >= S.MIN_DAY ? ' — 🎉 4시간 달성' : ''}`); }
+    case 'stLog': { const last = Object.values(D.studyLogs || {}).sort((x, y) => (y.at || 0) - (x.at || 0))[0];
+      return openSheet('stLog', 진도판(last ? last.book : 'fa')); }
+    case 'stBook': F = 진도판(b.dataset.v); return drawSheet();
+    case 'stRound': F.round = Math.max(1, (+F.round || 1) + +b.dataset.d); return drawSheet();
+    case 'stLogSave': { const bk = S.bookOf(F.book), u = +F.unit || 0; if (!u) return toast('어디까지 했는지 단원을 골라 주세요');
+      const at = Date.now();
+      await DB.put('studyLogs', 'l' + at, { book: F.book, round: +F.round || 1, unit: u, at, date: S.stDay(at), by: ME || '' });
+      const 끝 = u === bk.units.length; closeSheet();
+      새것알림(`📚 ${이름('her')} 진도`, `${bk.name} ${F.round}회독 · ${u}단원 ${단원이름(F.book, u)}까지${끝 ? ' — 🎉 회독 끝!' : ''}`);
+      return toast(끝 ? `🎉 ${bk.name} ${F.round}회독 끝!` : `📚 ${bk.name} ${u}단원까지 적었어요 (${Math.round(u / bk.units.length * 100)}%)`); }
+    case 'stWk': stWk = Math.min(0, stWk + +b.dataset.d); return render();
+    case 'cheerNew': return openSheet('cheer', { text: '' });
+    case 'cheerSend': { const text = (F.text || '').trim(); if (!text) return toast('보낼 말을 골라 주세요');
+      b.disabled = true; b.textContent = '보내는 중…';
+      if (DEMO) { const at = Date.now(); await DB.put('cheers', 'c' + at, { from: ME, to: ME === 'me' ? 'her' : 'me', text, at, date: today }); closeSheet(); return toast('[미리보기] 응원 저장 — 알림은 안 보냄'); }
+      const r = await api({ a: 'cheer', text });
+      if (r.ok) { closeSheet(); return toast(r.sent ? '📣 보냈어요!' : '📣 남겼어요 — 상대 폰 알림이 꺼져 있어 앱에서만 보여요'); }
+      b.disabled = false; b.textContent = '보내기'; return toast('⚠️ 못 보냈어요: ' + (r.error || '')); }
     /* 설정 */
     case 'role': ROLE = b.dataset.v; ls.set('home-role', ROLE); wake(); lastHtml = ''; return render();
     case 'pushOn': return pushSubscribe();
@@ -1289,8 +1503,8 @@ function night() {
   $('#night').classList.toggle('show', on); $('#night').classList.toggle('dim', !ambientOn && auto);
   if (!on) return;
   $('#nightTm').textContent = k.time; $('#nightDt').textContent = 긴날짜(k.date);
-  const ws = isTab() ? ['me', 'her'] : [ME || 'me'], left = ws.flatMap(w => mySets(w)).filter(x => !taken(x.key)).length, evs = C.eventsOn(Object.values(D.events), k.date);
-  $('#nightInfo').innerHTML = `<span style="color:var(--med)">💊 약 ${left}개 남음</span><span style="color:#475569">|</span><span style="color:var(--cal)">📅 오늘 일정 ${evs.length}건</span>`;
+  const evs = C.eventsOn(Object.values(D.events), k.date), sm = S.dayMin(D.study[S.stDay()], Date.now());   // 📚 26-10-29 약 → 오늘 공부 (약 메뉴 숨김)
+  $('#nightInfo').innerHTML = `<span style="color:#a5b4fc">📚 오늘 공부 ${S.dur(sm)}</span><span style="color:#475569">|</span><span style="color:var(--cal)">📅 오늘 일정 ${evs.length}건</span>`;
   const ev = evs.find(e => !e.time || e.time >= k.time);
   $('#nightNext').textContent = ev ? `다음 · ${ev.time || '종일'} ${ev.title}` : '';
 }
