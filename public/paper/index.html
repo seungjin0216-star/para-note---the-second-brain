@@ -122,10 +122,14 @@ button.on .dot{box-shadow:0 0 0 2px var(--bar),0 0 0 4px var(--onT)}
 <div id="toast"></div>
 
 <script>
+// perfect-freehand 1.2.2 (MIT · Copyright (c) 2021 Stephen Ruiz Ltd) — 매끈한 펜 획 테두리 계산. 손대지 말 것
+window.PF=(function(){function $(e,t,u,x=h=>h){return e*x(.5-t*(.5-u))}function se(e){return[-e[0],-e[1]]}function l(e,t){return[e[0]+t[0],e[1]+t[1]]}function a(e,t){return[e[0]-t[0],e[1]-t[1]]}function b(e,t){return[e[0]*t,e[1]*t]}function he(e,t){return[e[0]/t,e[1]/t]}function R(e){return[e[1],-e[0]]}function B(e,t){return e[0]*t[0]+e[1]*t[1]}function ue(e,t){return e[0]===t[0]&&e[1]===t[1]}function ge(e){return Math.hypot(e[0],e[1])}function de(e){return e[0]*e[0]+e[1]*e[1]}function A(e,t){return de(a(e,t))}function G(e){return he(e,ge(e))}function ie(e,t){return Math.hypot(e[1]-t[1],e[0]-t[0])}function L(e,t,u){let x=Math.sin(u),h=Math.cos(u),y=e[0]-t[0],n=e[1]-t[1],f=y*h-n*x,d=y*x+n*h;return[f+t[0],d+t[1]]}function K(e,t,u){return l(e,b(a(t,e),u))}function ee(e,t,u){return l(e,b(t,u))}var{min:C,PI:xe}=Math,pe=.275,V=xe+1e-4;function ce(e,t={}){let{size:u=16,smoothing:x=.5,thinning:h=.5,simulatePressure:y=!0,easing:n=r=>r,start:f={},end:d={},last:D=!1}=t,{cap:S=!0,easing:j=r=>r*(2-r)}=f,{cap:q=!0,easing:c=r=>--r*r*r+1}=d;if(e.length===0||u<=0)return[];let p=e[e.length-1].runningLength,g=f.taper===!1?0:f.taper===!0?Math.max(u,p):f.taper,T=d.taper===!1?0:d.taper===!0?Math.max(u,p):d.taper,te=Math.pow(u*x,2),_=[],M=[],H=e.slice(0,10).reduce((r,i)=>{let o=i.pressure;if(y){let s=C(1,i.distance/u),W=C(1,1-s);o=C(1,r+(W-r)*(s*pe))}return(r+o)/2},e[0].pressure),m=$(u,h,e[e.length-1].pressure,n),U,X=e[0].vector,z=e[0].point,F=z,O=z,E=F,J=!1;for(let r=0;r<e.length;r++){let{pressure:i}=e[r],{point:o,vector:s,distance:W,runningLength:I}=e[r];if(r<e.length-1&&p-I<3)continue;if(h){if(y){let v=C(1,W/u),Z=C(1,1-v);i=C(1,H+(Z-H)*(v*pe))}m=$(u,h,i,n)}else m=u/2;U===void 0&&(U=m);let le=I<g?j(I/g):1,fe=p-I<T?c((p-I)/T):1;m=Math.max(.01,m*Math.min(le,fe));let re=(r<e.length-1?e[r+1]:e[r]).vector,Y=r<e.length-1?B(s,re):1,be=B(s,X)<0&&!J,ne=Y!==null&&Y<0;if(be||ne){let v=b(R(X),m);for(let Z=1/13,w=0;w<=1;w+=Z)O=L(a(o,v),o,V*w),_.push(O),E=L(l(o,v),o,V*-w),M.push(E);z=O,F=E,ne&&(J=!0);continue}if(J=!1,r===e.length-1){let v=b(R(s),m);_.push(a(o,v)),M.push(l(o,v));continue}let oe=b(R(K(re,s,Y)),m);O=a(o,oe),(r<=1||A(z,O)>te)&&(_.push(O),z=O),E=l(o,oe),(r<=1||A(F,E)>te)&&(M.push(E),F=E),H=i,X=s}let P=e[0].point.slice(0,2),k=e.length>1?e[e.length-1].point.slice(0,2):l(e[0].point,[1,1]),Q=[],N=[];if(e.length===1){if(!(g||T)||D){let r=ee(P,G(R(a(P,k))),-(U||m)),i=[];for(let o=1/13,s=o;s<=1;s+=o)i.push(L(r,P,V*2*s));return i}}else{if(!(g||T&&e.length===1))if(S)for(let i=1/13,o=i;o<=1;o+=i){let s=L(M[0],P,V*o);Q.push(s)}else{let i=a(_[0],M[0]),o=b(i,.5),s=b(i,.51);Q.push(a(P,o),a(P,s),l(P,s),l(P,o))}let r=R(se(e[e.length-1].vector));if(T||g&&e.length===1)N.push(k);else if(q){let i=ee(k,r,m);for(let o=1/29,s=o;s<1;s+=o)N.push(L(i,k,V*3*s))}else N.push(l(k,b(r,m)),l(k,b(r,m*.99)),a(k,b(r,m*.99)),a(k,b(r,m)))}return _.concat(N,M.reverse(),Q)}function me(e,t={}){var q;let{streamline:u=.5,size:x=16,last:h=!1}=t;if(e.length===0)return[];let y=.15+(1-u)*.85,n=Array.isArray(e[0])?e:e.map(({x:c,y:p,pressure:g=.5})=>[c,p,g]);if(n.length===2){let c=n[1];n=n.slice(0,-1);for(let p=1;p<5;p++)n.push(K(n[0],c,p/4))}n.length===1&&(n=[...n,[...l(n[0],[1,1]),...n[0].slice(2)]]);let f=[{point:[n[0][0],n[0][1]],pressure:n[0][2]>=0?n[0][2]:.25,vector:[1,1],distance:0,runningLength:0}],d=!1,D=0,S=f[0],j=n.length-1;for(let c=1;c<n.length;c++){let p=h&&c===j?n[c].slice(0,2):K(S.point,n[c],y);if(ue(S.point,p))continue;let g=ie(p,S.point);if(D+=g,c<j&&!d){if(D<x)continue;d=!0}S={point:p,pressure:n[c][2]>=0?n[c][2]:.5,vector:G(a(S.point,p)),distance:g,runningLength:D},f.push(S)}return f[0].vector=((q=f[1])==null?void 0:q.vector)||[0,0],f}function ae(e,t={}){return ce(me(e,t),t)}var _e=ae;return{getStroke:ae};})();
+</script>
+<script>
 'use strict';
 // 종이 한 장 = 가로 1000 × 세로 1414 (A4 비율). 좌표는 이 단위로 저장 → 화면을 돌려도 글씨 위치가 그대로
 const LW = 1000, PH = 1414;
-const SIZES = { pen:[1.6, 2.6, 4.2], hl:[14, 20, 28] };
+const SIZES = { pen:[2.2, 3.2, 4.8], hl:[14, 20, 28] };
 const ER_R = 10;
 const $ = s => document.querySelector(s);
 const paper = $('#paper'), cBg = $('#cBg'), cInk = $('#cInk'), cLive = $('#cLive');
@@ -219,28 +223,43 @@ function paintBg(ctx, bg, y0, y1) {
     ctx.stroke();
   }
 }
-const pw = pr => 0.5 + pr;   // 필압 0~1 → 굵기 0.5~1.5배
-function drawStroke(ctx, s) {
+// 26-10-31 바꿈: 짧은 선을 이어 붙이던 방식 → 사장님 「다 딱딱 끊김」
+// 이제 획 하나를 테두리 한 덩어리로 만들어 채움 (perfect-freehand) → 메모 앱처럼 매끈
+const inkCache = new WeakMap();
+function inkPath(s, pts, done) {
+  const o = PF.getStroke(pts, {
+    size: s.w, thinning: s.m ? .35 : .45, smoothing: .6, streamline: .4,
+    simulatePressure: !!s.m, last: done, start:{ cap:true, taper:0 }, end:{ cap:true, taper:0 }
+  });
+  const path = new Path2D(), n = o.length;
+  if (!n) return path;
+  path.moveTo(o[0][0], o[0][1]);
+  for (let i = 0; i < n; i++) {
+    const a = o[i], b = o[(i + 1) % n];
+    path.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+  }
+  path.closePath();
+  return path;
+}
+function toPts(p) { const r = []; for (let i = 0; i < p.length; i += 3) r.push([p[i], p[i + 1], p[i + 2]]); return r; }
+function drawStroke(ctx, s, extra) {
   const p = s.p, n = p.length / 3;
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   if (s.t === 'hl') {
-    ctx.save(); ctx.globalAlpha = .38; ctx.strokeStyle = s.c; ctx.lineWidth = s.w; ctx.lineCap = 'square';
+    ctx.save(); ctx.globalAlpha = .38; ctx.strokeStyle = s.c; ctx.lineWidth = s.w; ctx.lineCap = 'square'; ctx.lineJoin = 'round';
     ctx.beginPath(); ctx.moveTo(p[0], p[1]);
-    for (let i = 1; i < n; i++) ctx.lineTo(p[i * 3], p[i * 3 + 1]);
-    if (n === 1) ctx.lineTo(p[0] + .1, p[1]);
+    let px = p[0], py = p[1];
+    for (let i = 1; i < n; i++) { const x = p[i * 3], y = p[i * 3 + 1]; ctx.quadraticCurveTo(px, py, (px + x) / 2, (py + y) / 2); px = x; py = y; }
+    ctx.lineTo(px + (n === 1 ? .1 : 0), py);
     ctx.stroke(); ctx.restore(); return;
   }
-  ctx.strokeStyle = ctx.fillStyle = s.c;
-  if (n === 1) { ctx.beginPath(); ctx.arc(p[0], p[1], s.w * pw(p[2]) / 2, 0, 7); ctx.fill(); return; }
-  let lx = p[0], ly = p[1], px = p[0], py = p[1];
-  for (let i = 1; i < n; i++) {
-    const x = p[i * 3], y = p[i * 3 + 1];
-    const mx = (px + x) / 2, my = (py + y) / 2;
-    ctx.beginPath(); ctx.lineWidth = s.w * pw(p[i * 3 + 2]);
-    ctx.moveTo(lx, ly); ctx.quadraticCurveTo(px, py, mx, my); ctx.stroke();
-    lx = mx; ly = my; px = x; py = y;
+  ctx.fillStyle = s.c;
+  if (s === live) {   // 쓰는 중 — 매번 새로 (앞으로 올 점까지 미리 그려 펜 끝을 따라붙게)
+    const pts = toPts(p); if (extra) pts.push(...extra);
+    ctx.fill(inkPath(s, pts, false)); return;
   }
-  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(px, py); ctx.stroke();
+  let path = inkCache.get(s);
+  if (!path) { path = inkPath(s, toPts(p), true); inkCache.set(s, path); }
+  ctx.fill(path);
 }
 // 형광펜을 먼저 깔고 글씨를 위에 → 형광펜이 글씨를 흐리게 하지 않음
 function paintStrokes(ctx, strokes) {
@@ -257,7 +276,7 @@ function paintAll() {
 }
 function paintLive() {
   xLive.setTransform(1, 0, 0, 1, 0, 0); xLive.clearRect(0, 0, cLive.width, cLive.height);
-  if (live) { view(xLive); drawStroke(xLive, live); }
+  if (live) { view(xLive); drawStroke(xLive, live, livePred); }
 }
 // 한 화면 그릴 때 한 번만 · 같은 이름이면 마지막 것만 (빠르게 쓸어도 마지막 위치를 놓치지 않음)
 const jobs = new Map();
@@ -267,7 +286,7 @@ function frame(fn, key) {
 }
 
 /* ── 펜 · 손가락 ─────────────────────────────── */
-let live = null, pen = null, erased = null, lastPen = 0, lastPr = .5;
+let live = null, livePred = null, pen = null, erased = null, lastPen = 0;
 const fingers = new Map();
 let pan = null, twoTap = null;
 
@@ -277,12 +296,13 @@ function addPt(e) {
   const p = live.p;
   for (const ev of evs) {
     const [x, y] = pt(ev);
-    let pr = ev.pointerType === 'pen' ? Math.max(ev.pressure, .05) : .5;
-    pr = lastPr * .6 + pr * .4; lastPr = pr;
+    const pr = ev.pointerType === 'pen' ? Math.max(ev.pressure, .05) : .5;
     const lx = p[p.length - 3], ly = p[p.length - 2];
-    if (p.length && Math.hypot(x - lx, y - ly) < .5) { p[p.length - 1] = +pr.toFixed(2); continue; }
-    p.push(+x.toFixed(1), +y.toFixed(1), +pr.toFixed(2));
+    if (p.length && Math.hypot(x - lx, y - ly) < .3) continue;
+    p.push(+x.toFixed(2), +y.toFixed(2), +pr.toFixed(2));
   }
+  const pe = e.getPredictedEvents ? e.getPredictedEvents() : [];
+  livePred = pe.length ? pe.slice(0, 2).map(ev => [...pt(ev), p[p.length - 1]]) : null;
 }
 function distSeg(x, y, ax, ay, bx, by) {
   const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy;
@@ -322,8 +342,8 @@ paper.addEventListener('pointerdown', e => {
   pen = e.pointerId; pan = null; fingers.clear();
   if (st.tool === 'er') { erased = []; eraseAt(e); return; }
   const hl = st.tool === 'hl';
-  lastPr = e.pointerType === 'pen' ? Math.max(e.pressure, .2) : .5;
   live = { t: hl ? 'hl' : 'pen', c: hl ? st.hlColor : st.color, w: SIZES[hl ? 'hl' : 'pen'][st.size], p:[] };
+  if (e.pointerType !== 'pen') live.m = 1;   // 마우스·손가락은 필압이 없음 → 속도로 흉내
   addPt(e); frame(paintLive);
 });
 paper.addEventListener('pointermove', e => {
@@ -350,7 +370,7 @@ function penUp(e) {
       P().strokes.push(live); const h = H_(); h.u.push({ a:'add', s: live }); h.r = [];
       touch(P()); syncBtns();
     }
-    live = null; paintAll();
+    live = null; livePred = null; paintAll();
     return;
   }
   if (fingers.has(e.pointerId)) {
@@ -364,6 +384,9 @@ paper.addEventListener('pointerup', penUp);
 paper.addEventListener('pointercancel', penUp);
 paper.addEventListener('wheel', e => { e.preventDefault(); setOff(offY + e.deltaY / scale); }, { passive:false });
 document.addEventListener('gesturestart', e => e.preventDefault());
+// 🔴 아이패드 사파리는 펜슬을 길게 대거나 빨리 그으면 돋보기·확대·글씨인식이 끼어들어 획을 끊음 (pointercancel)
+//    종이 위의 터치는 사파리가 못 가져가게 막음. 펜·손가락 처리는 위 pointer 쪽에서 그대로 함
+for (const t of ['touchstart', 'touchmove', 'touchend']) paper.addEventListener(t, e => e.preventDefault(), { passive:false });
 document.addEventListener('dblclick', e => e.preventDefault());
 
 /* ── 되돌리기 ─────────────────────────────── */
